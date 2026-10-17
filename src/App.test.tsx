@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { beginLogin } from './features/twitch-auth/oauth'
 import { createAuthSession } from './features/twitch-auth/session'
@@ -39,6 +39,7 @@ describe('authentication screen', () => {
     expect(html).toContain('Twitch でログイン')
     expect(html).toContain('http://localhost:5173/')
     expect(html).not.toContain('disabled=""')
+    expect(html).not.toContain('<canvas')
   })
 
   it('shows the authenticated user and logout without exposing the token', async () => {
@@ -49,6 +50,8 @@ describe('authentication screen', () => {
     expect(html).toContain('42')
     expect(html).toContain('ログアウト')
     expect(html).not.toContain('secret-token')
+    expect(html).toContain('<canvas')
+    expect(html).toContain('参加者を待っています')
     session.dispose()
   })
 
@@ -57,7 +60,40 @@ describe('authentication screen', () => {
     void session.start()
     const html = renderToStaticMarkup(<App session={session} config={config} />)
     expect(html).toContain('認証を確認しています')
+    expect(html).not.toContain('<canvas')
     expect(html).toContain('disabled=""')
     session.dispose()
+  })
+})
+
+
+describe('roulette visibility', () => {
+  it('hides the roulette after logout', async () => {
+    const session = fixture(true, true)
+    try {
+      await session.start()
+      expect(renderToStaticMarkup(<App session={session} config={config} />)).toContain('<canvas')
+      session.logout()
+      expect(renderToStaticMarkup(<App session={session} config={config} />)).not.toContain('<canvas')
+    } finally {
+      session.dispose()
+    }
+  })
+
+  it('hides the roulette when authentication expires', async () => {
+    vi.useFakeTimers()
+    const session = fixture(true, true)
+    try {
+      await session.start()
+      expect(renderToStaticMarkup(<App session={session} config={config} />)).toContain('<canvas')
+      vi.setSystemTime(Date.now() + 7200000)
+      await session.refresh()
+      const html = renderToStaticMarkup(<App session={session} config={config} />)
+      expect(html).toContain('認証の有効期限が切れました')
+      expect(html).not.toContain('<canvas')
+    } finally {
+      session.dispose()
+      vi.useRealTimers()
+    }
   })
 })

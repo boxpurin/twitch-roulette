@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { AuthConfig } from './features/twitch-auth/oauth'
 import type { AuthSession } from './features/twitch-auth/session'
+import Roulette from './features/roulette/Roulette'
 import './App.css'
 
 interface AppProps {
@@ -14,9 +15,13 @@ function App({ session, config }: AppProps) {
     <main className="auth-page">
       <header>
         <p className="eyebrow">TWITCH ROULETTE</p>
-        <h1>Twitch と接続</h1>
-        <p>配信者のアカウントでログインして、ルーレットの準備を始めましょう。</p>
+        <h1>{auth.status === 'authenticated' ? 'ルーレット' : 'Twitch と接続'}</h1>
+        <p>{auth.status === 'authenticated'
+          ? 'Twitch と接続しています。ルーレットは待機中です。'
+          : '配信者のアカウントでログインして、ルーレットの準備を始めましょう。'}</p>
       </header>
+
+      {auth.status === 'authenticated' ? <Roulette /> : null}
 
       <section className="auth-card" aria-labelledby="auth-heading">
         <h2 id="auth-heading">配信者アカウント</h2>

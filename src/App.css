@@ -45,3 +45,19 @@ footer p + p { margin-top: 12px; }
   .auth-page { padding: 32px 16px; }
   .auth-card, .setup { padding: 20px; }
 }
+
+.roulette-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 28px;
+  text-align: center;
+}
+.roulette-canvas {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  margin: 16px auto;
+}
+.roulette-card .caption { margin-top: 12px; }
