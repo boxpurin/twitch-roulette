@@ -40,6 +40,7 @@ describe('authentication screen', () => {
     expect(html).toContain('http://localhost:5173/')
     expect(html).not.toContain('disabled=""')
     expect(html).not.toContain('<canvas')
+    expect(html).not.toContain('項目を追加')
   })
 
   it('shows the authenticated user and logout without exposing the token', async () => {
@@ -52,6 +53,9 @@ describe('authentication screen', () => {
     expect(html).not.toContain('secret-token')
     expect(html).toContain('<canvas')
     expect(html).toContain('参加者を待っています')
+    expect(html).toContain('項目を追加')
+    expect(html).toContain('まだ項目がありません')
+    expect(html).toContain('0 件')
     session.dispose()
   })
 

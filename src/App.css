@@ -61,3 +61,51 @@ footer p + p { margin-top: 12px; }
   margin: 16px auto;
 }
 .roulette-card .caption { margin-top: 12px; }
+
+.roulette-items {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding-top: 24px;
+  text-align: left;
+}
+.items-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.items-heading h2 { margin: 0; }
+.item-add { display: flex; align-items: end; gap: 12px; margin: 20px 0; }
+.item-field { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 8px; }
+.item-field span { font-size: 14px; }
+.item-field input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+}
+.roulette-items button {
+  flex-shrink: 0;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  cursor: pointer;
+}
+.roulette-items button.secondary { color: var(--text-h); background: transparent; border-color: var(--border); }
+.roulette-items button:disabled { opacity: .5; cursor: not-allowed; }
+.roulette-items :is(button, input):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.item-list { list-style: none; padding: 0; margin: 0; }
+.roulette-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-top: 1px solid var(--border); }
+.item-name { flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--text-h); white-space: pre-wrap; }
+.item-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.item-edit { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.items-empty { border: 1px dashed var(--border); border-radius: 8px; padding: 20px; }
+@media (max-width: 480px) {
+  .roulette-card { padding: 20px 16px; }
+  .item-add { flex-direction: column; align-items: stretch; }
+  .roulette-item { flex-direction: column; align-items: stretch; gap: 12px; }
+}
