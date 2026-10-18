@@ -5,6 +5,7 @@ import type { ItemsAction, RouletteItem } from './items'
 interface ItemsProps {
   items: readonly RouletteItem[]
   dispatch: Dispatch<ItemsAction>
+  disabled?: boolean
 }
 
 function ItemRow({ item, index, dispatch }: {
@@ -51,7 +52,7 @@ function ItemRow({ item, index, dispatch }: {
   )
 }
 
-export default function RouletteItems({ items, dispatch }: ItemsProps) {
+export default function RouletteItems({ items, dispatch, disabled = false }: ItemsProps) {
   const [name, setName] = useState('')
 
   return (
@@ -60,25 +61,28 @@ export default function RouletteItems({ items, dispatch }: ItemsProps) {
         <h2 id="items-heading">ルーレットの項目</h2>
         <span>{items.length} 件</span>
       </div>
-      <form className="item-add" onSubmit={event => {
-        event.preventDefault()
-        if (!name.trim()) return
-        dispatch({ type: 'add', id: crypto.randomUUID(), name })
-        setName('')
-      }}>
-        <label className="item-field">
-          <span>項目名</span>
-          <input value={name} onChange={event => setName(event.target.value)} placeholder="追加する項目の名前" required />
-        </label>
-        <button type="submit" disabled={!name.trim()}>項目を追加</button>
-      </form>
-      {items.length === 0 ? (
-        <p className="items-empty">まだ項目がありません。上のフォームから追加してください。</p>
-      ) : (
-        <ol className="item-list">
-          {items.map((item, index) => <ItemRow key={item.id} item={item} index={index} dispatch={dispatch} />)}
-        </ol>
-      )}
+      <fieldset disabled={disabled}>
+        <form className="item-add" onSubmit={event => {
+          event.preventDefault()
+          if (!name.trim()) return
+          dispatch({ type: 'add', id: crypto.randomUUID(), name })
+          setName('')
+        }}>
+          <label className="item-field">
+            <span>項目名</span>
+            <input value={name} onChange={event => setName(event.target.value)} placeholder="追加する項目の名前" required />
+          </label>
+          <button type="submit" disabled={!name.trim()}>項目を追加</button>
+        </form>
+        {items.length === 0 ? (
+          <p className="items-empty">まだ項目がありません。上のフォームから追加してください。</p>
+        ) : (
+          <ol className="item-list">
+            {items.map((item, index) => <ItemRow key={item.id} item={item} index={index} dispatch={dispatch} />)}
+          </ol>
+        )}
+      </fieldset>
+      {disabled ? <p className="caption">回転中は項目を変更できません。</p> : null}
       <p className="caption">項目はこの画面でのみ保持します。再読み込み・ログアウトするとリセットされます。</p>
     </section>
   )

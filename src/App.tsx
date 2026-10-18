@@ -17,7 +17,7 @@ function App({ session, config }: AppProps) {
         <p className="eyebrow">TWITCH ROULETTE</p>
         <h1>{auth.status === 'authenticated' ? 'ルーレット' : 'Twitch と接続'}</h1>
         <p>{auth.status === 'authenticated'
-          ? 'Twitch と接続しています。ルーレットは待機中です。'
+          ? 'Twitch と接続しています。項目を追加してルーレットを回せます。'
           : '配信者のアカウントでログインして、ルーレットの準備を始めましょう。'}</p>
       </header>
 

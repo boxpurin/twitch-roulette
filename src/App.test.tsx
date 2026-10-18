@@ -56,6 +56,7 @@ describe('authentication screen', () => {
     expect(html).toContain('項目を追加')
     expect(html).toContain('まだ項目がありません')
     expect(html).toContain('0 件')
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>ルーレットを回す<\/button>/)
     session.dispose()
   })
 

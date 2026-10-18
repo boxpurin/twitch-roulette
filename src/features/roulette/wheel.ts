@@ -1,13 +1,10 @@
 import type { RouletteItem } from './items'
+import { createSpinAnimation } from './animation'
 
 export const WHEEL_SIZE = 640
 const COLORS = ['#9146ff', '#c4a1ff', '#6d28d9', '#ddd0ff']
 
-export function drawWheel(canvas: HTMLCanvasElement, items: readonly RouletteItem[]) {
-  const context = canvas.getContext('2d')
-  if (!context) return
-
-  context.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE)
+function drawDisk(context: CanvasRenderingContext2D, items: readonly RouletteItem[]) {
   const center = WHEEL_SIZE / 2
   const count = items.length || 8
   const slice = Math.PI * 2 / count
@@ -44,7 +41,39 @@ export function drawWheel(canvas: HTMLCanvasElement, items: readonly RouletteIte
       context.restore()
     }
   }
+}
 
+export function createWheel(canvas: HTMLCanvasElement, items: readonly RouletteItem[]) {
+  const context = canvas.getContext('2d')
+  const disk = canvas.ownerDocument.createElement('canvas')
+  disk.width = WHEEL_SIZE
+  disk.height = WHEEL_SIZE
+  const diskContext = disk.getContext('2d')
+  if (!context || !diskContext) return undefined
+  drawDisk(diskContext, items)
+
+  function draw(angle: number, spinning: boolean) {
+    if (!context) return
+    const center = WHEEL_SIZE / 2
+    context.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE)
+    context.save()
+    context.translate(center, center)
+    context.rotate(angle)
+    context.drawImage(disk, -center, -center)
+    context.restore()
+    drawOverlay(context, spinning ? '回転中' : '待機中')
+  }
+
+  draw(0, false)
+  const animation = createSpinAnimation(draw)
+  return {
+    spin: (index: number, onComplete: () => void) => animation.spin(index, items.length, onComplete),
+    dispose: () => animation.dispose(),
+  }
+}
+
+function drawOverlay(context: CanvasRenderingContext2D, label: string) {
+  const center = WHEEL_SIZE / 2
   context.beginPath()
   context.arc(center, center, 64, 0, Math.PI * 2)
   context.fillStyle = '#ffffff'
@@ -53,7 +82,7 @@ export function drawWheel(canvas: HTMLCanvasElement, items: readonly RouletteIte
   context.font = 'bold 20px system-ui, sans-serif'
   context.textAlign = 'center'
   context.textBaseline = 'middle'
-  context.fillText('待機中', center, center)
+  context.fillText(label, center, center)
 
   context.beginPath()
   context.moveTo(center - 20, 18)
