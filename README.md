@@ -89,6 +89,23 @@ Twitch 公式がブラウザアプリ向けに説明している **Implicit Flow
 
 本番の HTTPS URL を Twitch の OAuth Redirect URLs と `VITE_TWITCH_REDIRECT_URI` に設定し、`pnpm build` の出力 `dist/` を配信します。設定はビルド時に反映されます。戻り先 URL でこのアプリの HTML が返るようホスティングを設定してください。HTTP はループバックでの開発時のみ許可します。
 
+### Cloudflare Pages の Content Security Policy（CSP）
+
+`public/_headers` はビルド時に `dist/_headers` へコピーされ、Cloudflare Pages が全パスに `Content-Security-Policy` レスポンスヘッダーを適用します。Report-Only ではなく、許可していない読み込みや通信を実際にブロックし、スクリプト注入やトークン漏えいのリスクを軽減します。
+
+- JavaScript・CSS・画像・フォントは同一オリジンからのみ読み込めます。インラインスクリプト・インラインスタイル・`eval` は許可しません。
+- Fetch / WebSocket の通信先は `https://id.twitch.tv`（トークン検証）、`https://api.twitch.tv`（報酬一覧・購読作成）、`wss://eventsub.wss.twitch.tv`（EventSub の接続・再接続）のみです。Twitch ログインへの画面遷移はこの通信制限の対象外です。
+- オブジェクト埋め込み、`base` 要素による基準 URL の変更、他サイトを含む iframe 内へのアプリの埋め込み、フォーム送信を禁止します。
+
+確認手順:
+
+1. `pnpm build` 後、`public/_headers` と `dist/_headers` の内容が一致することを確認します。
+2. Pages 配信後、ブラウザの開発者ツールの Network で HTML のレスポンスヘッダーに設定どおりの `Content-Security-Policy` があることを確認します。
+3. Console に CSP 違反が出ないことを確認し、Twitch ログイン・報酬一覧の取得・EventSub の受信・ルーレット表示を検証します。
+4. 開発者ツールから未許可の接続先への Fetch を試すと CSP により拒否されることも確認します。実トークンなどの秘密情報は使用しないでください。
+
+Vite の開発サーバーと `pnpm preview` は `_headers` を適用しません。CSP の有効性は Pages 上で確認してください。外部サービスやリソースを追加する際は、必要な許可先を見直します。
+
 ## 検証
 
 ```bash
