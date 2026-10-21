@@ -157,3 +157,44 @@ describe("roulette coordination", () => {
     expect(unavailable.getSnapshot().storageError).toBeTruthy();
   });
 });
+
+describe("exclusion coordination", () => {
+  it("retains Twitch exclusions on repeat exchanges and across reloads and reward switches", () => {
+    const f = fixture();
+    f.controller.selectReward("r");
+    f.controller.start();
+    f.redeem("1");
+    f.controller.edit({ type: "exclude", id: "twitch:42", excluded: true });
+    f.redeem("2");
+    expect(f.controller.getSnapshot().items[0]).toMatchObject({
+      excluded: true,
+      weight: 2,
+      redemptions: 2,
+    });
+    expect(f.controller.beginSpin(() => 0)).toBeUndefined();
+    expect(f.controller.getSnapshot().spinning).toBe(false);
+    const reloaded = createRouletteController(f.options);
+    expect(reloaded.getSnapshot().items[0]?.excluded).toBe(true);
+    f.controller.selectReward("other");
+    expect(f.controller.getSnapshot().items).toEqual([]);
+    f.controller.selectReward("r");
+    expect(f.controller.getSnapshot().items[0]?.excluded).toBe(true);
+    f.controller.edit({ type: "exclude", id: "twitch:42", excluded: false });
+    expect(f.controller.beginSpin(() => 0)?.id).toBe("twitch:42");
+  });
+  it("keeps manual items, rejects changes during spins and clears stale winners on exclusion", () => {
+    const f = fixture();
+    f.controller.edit({ type: "add", id: "m", name: "手動" });
+    const winner = f.controller.beginSpin(() => 0);
+    f.controller.edit({ type: "exclude", id: "m", excluded: true });
+    expect(f.controller.getSnapshot().items[0]?.excluded).toBeUndefined();
+    f.controller.finishSpin(winner ?? null);
+    expect(f.controller.getSnapshot().winner?.id).toBe("m");
+    f.controller.edit({ type: "exclude", id: "m", excluded: true });
+    expect(f.controller.getSnapshot().winner).toBeNull();
+    expect(createRouletteController(f.options).getSnapshot().items).toEqual([
+      { id: "m", name: "手動", excluded: true },
+    ]);
+    expect(f.controller.beginSpin(() => 0)).toBeUndefined();
+  });
+});

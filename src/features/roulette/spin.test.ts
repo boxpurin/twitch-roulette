@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getStopAngle, selectWinner } from "./spin";
+import { getSectors, getStopAngle, selectWinner } from "./spin";
 
 const items = [
   { id: "a", name: "A賞" },
@@ -85,4 +85,41 @@ describe("weighted wheel", () => {
       expect(() => selectWinner(weighted, () => random)).toThrow();
     },
   );
+});
+
+describe("excluded sectors", () => {
+  const entries = [
+    { id: "x", name: "除外", weight: 100, excluded: true },
+    { id: "a", name: "A", weight: 1 },
+    { id: "y", name: "除外2", weight: 100, excluded: true },
+    { id: "b", name: "B", weight: 3, excluded: false },
+  ];
+  it("calculates probabilities and stop positions only for eligible items", () => {
+    const sectors = getSectors(entries);
+    expect(sectors.map((s) => [s.item.id, s.probability])).toEqual([
+      ["a", 0.25],
+      ["b", 0.75],
+    ]);
+    expect(getStopAngle(1, entries, 0) % (2 * Math.PI)).toBeCloseTo(
+      0.75 * Math.PI,
+    );
+  });
+  it.each([
+    [0, "a"],
+    [0.249, "a"],
+    [0.25, "b"],
+    [0.999, "b"],
+  ] as const)("never selects excluded items for %s", (value, id) => {
+    expect(selectWinner(entries, () => value)?.id).toBe(id);
+  });
+  it("does not consume randomness when all items are excluded", () => {
+    const random = vi.fn(() => 0);
+    expect(selectWinner([entries[0]!], random)).toBeUndefined();
+    expect(random).not.toHaveBeenCalled();
+    expect(getSectors([entries[0]!])).toEqual([]);
+  });
+  it("draws the only eligible item", () => {
+    expect(selectWinner(entries.slice(0, 2), () => 0)?.id).toBe("a");
+    expect(selectWinner(entries.slice(0, 2), () => 0.999)?.id).toBe("a");
+  });
 });

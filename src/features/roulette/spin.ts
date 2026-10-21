@@ -1,7 +1,9 @@
 import type { RouletteItem } from "./items";
+import { getEligibleItems } from "./items";
 import { isPositiveInteger } from "../../shared/validation";
 
 export function getSectors(items: readonly RouletteItem[]) {
+  items = getEligibleItems(items);
   if (items.length === 0) return [];
   let max = 1;
   for (const item of items) {
@@ -24,11 +26,12 @@ export function selectWinner(
   items: readonly RouletteItem[],
   random: () => number = Math.random,
 ): RouletteItem | undefined {
-  if (items.length === 0) return undefined;
+  const sectors = getSectors(items);
+  if (sectors.length === 0) return undefined;
   const value = random();
   if (!Number.isFinite(value) || value < 0 || value >= 1)
     throw new Error("乱数は 0 以上 1 未満で指定してください。");
-  return getSectors(items).find((sector) => value < sector.end)?.item;
+  return sectors.find((sector) => value < sector.end)?.item;
 }
 
 export function getStopAngle(

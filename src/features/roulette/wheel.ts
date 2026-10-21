@@ -1,4 +1,5 @@
 import type { RouletteItem } from "./items";
+import { getEligibleItems } from "./items";
 import { createSpinAnimation } from "./animation";
 import { getSectors, getStopAngle } from "./spin";
 
@@ -59,6 +60,7 @@ export function createWheel(
   items: readonly RouletteItem[],
   winnerId?: string,
 ) {
+  items = getEligibleItems(items);
   const context = canvas.getContext("2d");
   const disk = canvas.ownerDocument.createElement("canvas");
   disk.width = WHEEL_SIZE;
