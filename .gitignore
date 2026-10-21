@@ -25,3 +25,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# codex
+.codex/
+
+# superpowers
+/docs/superpowers
