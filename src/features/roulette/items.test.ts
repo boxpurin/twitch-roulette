@@ -62,3 +62,35 @@ describe("roulette items", () => {
     );
   });
 });
+
+describe("item exclusion", () => {
+  it("excludes and restores only the requested ID without deleting data", () => {
+    const items = [
+      { id: "a", name: "同名", weight: 3 },
+      {
+        id: "twitch:42",
+        name: "同名",
+        userId: "42",
+        weight: 5,
+        redemptions: 2,
+      },
+    ];
+    const excluded = itemsReducer(items, {
+      type: "exclude",
+      id: "twitch:42",
+      excluded: true,
+    });
+    expect(excluded).toEqual([items[0], { ...items[1], excluded: true }]);
+    expect(items[1]).not.toHaveProperty("excluded");
+    expect(
+      itemsReducer(excluded, {
+        type: "exclude",
+        id: "twitch:42",
+        excluded: false,
+      }),
+    ).toEqual([items[0], { ...items[1], excluded: false }]);
+    expect(
+      itemsReducer(items, { type: "exclude", id: "missing", excluded: true }),
+    ).toEqual(items);
+  });
+});

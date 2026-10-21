@@ -14,6 +14,7 @@ function isItem(value: unknown): value is RouletteItem {
     isRecord(value) &&
     isText(value.id) &&
     isText(value.name) &&
+    (value.excluded === undefined || typeof value.excluded === "boolean") &&
     (value.weight === undefined || isPositiveInteger(value.weight)) &&
     (value.userId === undefined
       ? value.redemptions === undefined
@@ -77,6 +78,7 @@ export function loadHistory(
         weight: item.weight,
         userId: item.userId,
         redemptions: item.redemptions,
+        excluded: item.excluded,
       })),
     };
     return { history, error: null, blocked: false };

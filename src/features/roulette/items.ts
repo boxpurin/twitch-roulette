@@ -6,12 +6,20 @@ export interface RouletteItem {
   weight?: number;
   userId?: string;
   redemptions?: number;
+  excluded?: boolean;
+}
+
+export function getEligibleItems(
+  items: readonly RouletteItem[],
+): RouletteItem[] {
+  return items.filter((item) => item.excluded !== true);
 }
 
 export type ItemsAction =
   | { type: "add"; id: string; name: string }
   | { type: "rename"; id: string; name: string }
   | { type: "remove"; id: string }
+  | { type: "exclude"; id: string; excluded: boolean }
   | { type: "weight"; id: string; weight: number };
 
 export function itemsReducer(
@@ -20,6 +28,12 @@ export function itemsReducer(
 ): RouletteItem[] {
   if (action.type === "remove")
     return items.filter((item) => item.id !== action.id);
+
+  if (action.type === "exclude") {
+    return items.map((item) =>
+      item.id === action.id ? { ...item, excluded: action.excluded } : item,
+    );
+  }
 
   if (action.type === "weight") {
     if (!isPositiveInteger(action.weight)) return items;

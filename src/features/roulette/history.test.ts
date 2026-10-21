@@ -147,3 +147,55 @@ describe("persistent history", () => {
     expect(saveHistory(storage, "a", "r", emptyHistory())).toBeTruthy();
   });
 });
+
+describe("saved exclusion", () => {
+  it("preserves exclusion through repeat redemption and reload", () => {
+    let state = historyReducer(emptyHistory(), redeem());
+    state = historyReducer(state, {
+      type: "exclude",
+      id: "twitch:42",
+      excluded: true,
+    });
+    state = historyReducer(
+      state,
+      redeem({ ...event, redemptionId: "r2", messageId: "m2" }),
+    );
+    expect(state.items[0]).toMatchObject({
+      excluded: true,
+      weight: 2,
+      redemptions: 2,
+    });
+    let raw: string | null = null;
+    const storage = {
+      getItem: () => raw,
+      setItem: (_key: string, value: string) => {
+        raw = value;
+      },
+    };
+    saveHistory(storage, "a", "r", state);
+    expect(loadHistory(storage, "a", "r").history.items[0]).toMatchObject({
+      excluded: true,
+      weight: 2,
+      redemptions: 2,
+    });
+  });
+  it("loads older items and explicit false but rejects nonboolean exclusion", () => {
+    for (const excluded of [undefined, false, true, "true", 1, null]) {
+      const raw = JSON.stringify({
+        ...emptyHistory(),
+        items: [{ id: "m", name: "手動", excluded }],
+      });
+      const loaded = loadHistory(
+        { getItem: () => raw, setItem: () => {} },
+        "a",
+        "r",
+      );
+      if (excluded === undefined || typeof excluded === "boolean") {
+        expect(loaded.error).toBeNull();
+        expect(loaded.history.items[0]?.excluded).toBe(excluded);
+      } else {
+        expect(loaded.blocked).toBe(true);
+      }
+    }
+  });
+});
