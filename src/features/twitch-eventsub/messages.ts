@@ -7,7 +7,6 @@ export function readMessage(
   data: unknown,
 ): Record<string, unknown> | undefined {
   if (typeof data !== "string") return undefined;
-  console.log(data);
   try {
     const value: unknown = JSON.parse(data);
     return isRecord(value) ? value : undefined;
@@ -21,8 +20,6 @@ export function readRedemption(
   rewardId: string,
 ): Redemption | undefined {
   const { metadata, payload } = message;
-  console.log(userId);
-  console.log(rewardId);
   if (
     !isRecord(metadata) ||
     metadata.message_type !== "notification" ||
