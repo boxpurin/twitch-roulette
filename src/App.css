@@ -232,6 +232,18 @@ footer p + p {
   color: var(--text-h);
   white-space: pre-wrap;
 }
+.item-exclusion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.item-exclusion input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
 .item-actions {
   display: flex;
   gap: 8px;
@@ -309,5 +321,18 @@ footer p + p {
   }
 }
 
-.item-field select { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit; color: var(--text-h); background: var(--bg); }
-.reception-controls select:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.item-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+}
+.reception-controls select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}

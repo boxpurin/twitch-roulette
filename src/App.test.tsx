@@ -139,3 +139,38 @@ describe("roulette visibility", () => {
     }
   });
 });
+
+describe("all excluded roulette", () => {
+  it("disables drawing and describes an empty eligible wheel while keeping the item", async () => {
+    const raw = JSON.stringify({
+      version: 1,
+      resetAt: 0,
+      redemptionIds: [],
+      messageIds: [],
+      items: [{ id: "m", name: "保存済み手動", excluded: true }],
+    });
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (key: string) =>
+          key.startsWith("twitch-roulette.history.") ? raw : null,
+        setItem: () => {},
+      },
+    });
+    const session = fixture(true, true);
+    try {
+      await session.start();
+      const html = renderToStaticMarkup(
+        <App session={session} config={config} />,
+      );
+      expect(html).toContain("抽選対象の項目がありません");
+      expect(html).toContain("抽選対象 0 件のルーレット（待機中）");
+      expect(html).toContain("保存済み手動");
+      expect(html).toMatch(
+        /<button[^>]*disabled=""[^>]*>ルーレットを回す<\/button>/,
+      );
+    } finally {
+      session.dispose();
+      vi.unstubAllGlobals();
+    }
+  });
+});

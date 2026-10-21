@@ -33,6 +33,21 @@ function ItemRow({
 
   return (
     <li className="roulette-item">
+      <label className="item-exclusion">
+        <input
+          type="checkbox"
+          checked={item.excluded === true}
+          aria-label={`項目 ${index + 1}（${item.name}）を抽選から除外`}
+          onChange={(event) =>
+            dispatch({
+              type: "exclude",
+              id: item.id,
+              excluded: event.target.checked,
+            })
+          }
+        />
+        抽選から除外
+      </label>
       {editing ? (
         <form
           className="item-edit"
@@ -87,6 +102,7 @@ function ItemRow({
               {item.redemptions !== undefined
                 ? ` · 交換 ${item.redemptions} 回`
                 : " · 手動項目"}
+              {item.excluded ? " · 抽選対象外" : null}
             </p>
           </div>
           <div className="item-actions">
@@ -126,12 +142,17 @@ export default function RouletteItems({
 }: ItemsProps) {
   const [name, setName] = useState("");
   const sectors = getSectors(items);
+  const probabilities = new Map(
+    sectors.map(({ item, probability }) => [item.id, probability]),
+  );
 
   return (
     <section className="roulette-items" aria-labelledby="items-heading">
       <div className="items-heading">
         <h2 id="items-heading">ルーレットの項目</h2>
-        <span>{items.length} 件</span>
+        <span>
+          抽選対象 {sectors.length} 件 / 全 {items.length} 件
+        </span>
       </div>
       <fieldset disabled={disabled}>
         <form
@@ -168,7 +189,7 @@ export default function RouletteItems({
                 item={item}
                 index={index}
                 dispatch={dispatch}
-                probability={sectors[index]?.probability ?? 0}
+                probability={probabilities.get(item.id) ?? 0}
               />
             ))}
           </ol>
@@ -180,7 +201,7 @@ export default function RouletteItems({
       <p className="caption">
         初回交換は 1 倍、再交換ごとに現在の倍率へ 1
         を加えます。手動変更後も同じルールです。全員 1
-        倍なら当選確率は均等です。
+        倍なら抽選対象内の当選確率は均等です。除外した項目はチェックを外すと抽選対象に戻ります。
       </p>
     </section>
   );

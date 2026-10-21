@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import RouletteItems from "./RouletteItems";
 import { createRouletteController } from "./controller";
 import ReceptionControls from "./ReceptionControls";
 import { createRewardList } from "../twitch-rewards/list";
 import type { AuthSession } from "../twitch-auth/session";
 import { createWheel, WHEEL_SIZE } from "./wheel";
+import { getEligibleItems } from "./items";
 
 export default function Roulette({
   userId,
@@ -36,6 +43,7 @@ export default function Roulette({
     return rewardList.cancel;
   }, [rewardList]);
   const { items, spinning, winner } = state;
+  const eligibleItems = useMemo(() => getEligibleItems(items), [items]);
   useEffect(() => () => controller.stop(), [controller]);
   const [error, setError] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -43,14 +51,14 @@ export default function Roulette({
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    const wheel = createWheel(canvasRef.current, items, winner?.id);
+    const wheel = createWheel(canvasRef.current, eligibleItems, winner?.id);
     wheelRef.current = wheel;
     setError(!wheel);
     return () => {
       wheel?.dispose();
       wheelRef.current = undefined;
     };
-  }, [items, winner]);
+  }, [eligibleItems, winner]);
 
   function spin() {
     const wheel = wheelRef.current;
@@ -58,7 +66,7 @@ export default function Roulette({
     const selected = controller.beginSpin();
     if (!selected) return;
     const started = wheel.spin(
-      items.findIndex((item) => item.id === selected.id),
+      eligibleItems.findIndex((item) => item.id === selected.id),
       () => controller.finishSpin(selected),
     );
     if (!started) controller.finishSpin(null);
@@ -70,7 +78,9 @@ export default function Roulette({
       ? `当選: ${winner.name}`
       : items.length === 0
         ? "参加者を待っています"
-        : `${items.length} 件の項目を登録しています`;
+        : eligibleItems.length === 0
+          ? "抽選対象の項目がありません。除外のチェックを外してください。"
+          : `抽選対象 ${eligibleItems.length} 件 / 全 ${items.length} 件`;
 
   return (
     <section className="roulette-card" aria-labelledby="roulette-heading">
@@ -84,7 +94,7 @@ export default function Roulette({
         aria-label={
           items.length === 0
             ? "参加者未登録のルーレット（待機中）"
-            : `${items.length} 件の項目が登録されたルーレット（${spinning ? "回転中" : "待機中"}）。項目名は下の一覧で確認できます。`
+            : `抽選対象 ${eligibleItems.length} 件のルーレット（${spinning ? "回転中" : "待機中"}）。項目名は下の一覧で確認できます。`
         }
       >
         ルーレットの表示には Canvas 2D 対応のブラウザが必要です。
@@ -93,7 +103,7 @@ export default function Roulette({
         className="spin-button"
         type="button"
         onClick={spin}
-        disabled={items.length === 0 || spinning || error}
+        disabled={eligibleItems.length === 0 || spinning || error}
       >
         {spinning ? "回転中…" : "ルーレットを回す"}
       </button>
