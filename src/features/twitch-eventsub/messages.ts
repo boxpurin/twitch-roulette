@@ -1,5 +1,5 @@
 import { isRecord, isText } from "../../shared/validation";
-import type { Redemption } from "../roulette/history";
+import type { Redemption } from "../participants/history";
 
 export const REDEMPTION_TYPE =
   "channel.channel_points_custom_reward_redemption.add";

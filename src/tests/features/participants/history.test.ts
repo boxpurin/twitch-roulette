@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { emptyHistory, historyReducer } from "./history";
-import { loadHistory, saveHistory } from "./storage";
+import { emptyHistory, historyReducer } from "../../../features/participants/history";
+import { loadHistory, saveHistory } from "../../../features/participants/storage";
 
 const event = {
   userId: "42",

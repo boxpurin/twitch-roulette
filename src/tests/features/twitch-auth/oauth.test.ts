@@ -5,7 +5,7 @@ import {
   consumeCallback,
   getAuthConfig,
   validateToken,
-} from "./oauth";
+} from "../../../features/twitch-auth/oauth";
 
 export function memoryStorage() {
   const data = new Map<string, string>();

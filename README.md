@@ -2,6 +2,24 @@
 
 Twitch OAuth でログインし、指定したチャンネルポイント報酬を交換した視聴者をルーレットに登録する React / TypeScript / Vite のブラウザアプリです。バックエンドなしで動作します。手動での項目追加も可能です。
 
+## ディレクトリ構成
+
+```text
+src/
+  app/                 # 起動・画面構成・機能間の調整・画面全体のスタイル
+  assets/              # 画像などの静的アセット
+  features/
+    twitch-auth/       # OAuth・認証セッション
+    twitch-eventsub/   # WebSocket・購読・再接続・通知の変換
+    twitch-rewards/    # 報酬一覧の読み取り・取得状態
+    participants/      # 参加者の編集 UI・履歴・重複排除・保存
+    roulette/          # 抽選ロジック・回転アニメーション・Canvas 描画
+  shared/              # 汎用ユーティリティ・型
+  tests/               # app/・features/ の構成に対応したテスト
+```
+
+`app/controller.ts` が参加受付・参加者履歴・抽選を調整し、`app/Roulette.tsx` と `app/ReceptionControls.tsx` が画面を組み立てます。Twitch の通知は `twitch-eventsub` で `participants` の内部イベントへ変換します。`roulette` の抽選ロジックは React・Canvas・Twitch API に依存しません。演出は未実装のため、`features/effects/` は必要になった時点で追加します。
+
 ## ローカルでログインする
 
 1. [Twitch Developer Console](https://dev.twitch.tv/console/apps) でアプリを登録します。登録にはメール認証と二要素認証が必要です。

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connectRedemptions } from "./client";
-import type { EventSocket, ReceptionStatus, ReceptionOptions } from "./client";
-import type { Redemption } from "../roulette/history";
+import { connectRedemptions } from "../../../features/twitch-eventsub/client";
+import type { EventSocket, ReceptionStatus, ReceptionOptions } from "../../../features/twitch-eventsub/client";
+import type { Redemption } from "../../../features/participants/history";
 
 class Socket implements EventSocket {
   onmessage: ((event: { data: unknown }) => void) | null = null;

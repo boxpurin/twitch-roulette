@@ -1,14 +1,14 @@
-import { connectRedemptions } from "../twitch-eventsub/client";
+import { connectRedemptions } from "../features/twitch-eventsub/client";
 import type {
   ReceptionOptions,
   ReceptionStatus,
-} from "../twitch-eventsub/client";
-import { historyReducer, emptyHistory } from "./history";
-import type { Redemption } from "./history";
-import type { ItemsAction, RouletteItem } from "./items";
-import { loadHistory, saveHistory } from "./storage";
-import type { HistoryStorage } from "./storage";
-import { selectWinner } from "./spin";
+} from "../features/twitch-eventsub/client";
+import { historyReducer, emptyHistory } from "../features/participants/history";
+import type { Redemption } from "../features/participants/history";
+import type { ItemsAction, RouletteItem } from "../features/participants/items";
+import { loadHistory, saveHistory } from "../features/participants/storage";
+import type { HistoryStorage } from "../features/participants/storage";
+import { selectWinner } from "../features/roulette/spin";
 
 interface Options {
   userId: string;

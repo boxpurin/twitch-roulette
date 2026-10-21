@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createRewardList } from "./list";
-import type { Reward } from "./rewards";
+import { createRewardList } from "../../../features/twitch-rewards/list";
+import type { Reward } from "../../../features/twitch-rewards/rewards";
 
 const rewards = [{ id: "r", title: "参加", cost: 100 }];
 afterEach(() => vi.useRealTimers());

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSpinAnimation } from "./animation";
+import { createSpinAnimation } from "../../../features/roulette/animation";
 
 function fixture(initialAngle = 0) {
   let nextId = 0;

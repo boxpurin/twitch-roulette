@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { isPositiveInteger } from "../../shared/validation";
-import { getSectors } from "./spin";
+import { getSectors } from "../roulette/spin";
 import type { Dispatch } from "react";
 import type { ItemsAction, RouletteItem } from "./items";
 

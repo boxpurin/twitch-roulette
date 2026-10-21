@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createRouletteController } from "./controller";
-import type { ReceptionOptions } from "../twitch-eventsub/client";
-import { loadHistory, saveHistory } from "./storage";
-import { emptyHistory } from "./history";
+import { createRouletteController } from "../../app/controller";
+import type { ReceptionOptions } from "../../features/twitch-eventsub/client";
+import { loadHistory, saveHistory } from "../../features/participants/storage";
+import { emptyHistory } from "../../features/participants/history";
 
 function fixture() {
   const values = new Map<string, string>();

@@ -1,5 +1,5 @@
-import type { RouletteItem } from "./items";
-import { getEligibleItems } from "./items";
+import type { RouletteItem } from "../participants/items";
+import { getEligibleItems } from "../participants/items";
 import { createSpinAnimation } from "./animation";
 import { getSectors, getStopAngle } from "./spin";
 

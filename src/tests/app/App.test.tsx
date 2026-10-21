@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import App from "./App";
-import { beginLogin } from "./features/twitch-auth/oauth";
-import { createAuthSession } from "./features/twitch-auth/session";
+import App from "../../app/App";
+import { beginLogin } from "../../features/twitch-auth/oauth";
+import { createAuthSession } from "../../features/twitch-auth/session";
 
 const config = { clientId: "client123", redirectUri: "http://localhost:5173/" };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { itemsReducer } from "./items";
+import { itemsReducer } from "../../../features/participants/items";
 
 describe("roulette items", () => {
   it("adds trimmed names without changing existing items", () => {

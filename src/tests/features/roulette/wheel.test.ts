@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createWheel } from "./wheel";
+import { createWheel } from "../../../features/roulette/wheel";
 
 function fixture() {
   const labels: string[] = [];

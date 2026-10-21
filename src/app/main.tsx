@@ -2,9 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
-import { getAuthConfig } from "./features/twitch-auth/oauth";
-import type { AuthConfig } from "./features/twitch-auth/oauth";
-import { createAuthSession } from "./features/twitch-auth/session";
+import { getAuthConfig } from "../features/twitch-auth/oauth";
+import type { AuthConfig } from "../features/twitch-auth/oauth";
+import { createAuthSession } from "../features/twitch-auth/session";
 
 let config: AuthConfig | undefined;
 let configurationError: string | undefined;

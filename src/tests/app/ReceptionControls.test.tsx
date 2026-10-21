@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import ReceptionControls from "./ReceptionControls";
-import { createRouletteController } from "./controller";
-import type { RewardListState } from "../twitch-rewards/list";
+import ReceptionControls from "../../app/ReceptionControls";
+import { createRouletteController } from "../../app/controller";
+import type { RewardListState } from "../../features/twitch-rewards/list";
 
 function render(rewards: RewardListState, selected = "") {
   const controller = createRouletteController({

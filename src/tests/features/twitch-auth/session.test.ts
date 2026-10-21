@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { beginLogin } from "./oauth";
-import { createAuthSession } from "./session";
+import { beginLogin } from "../../../features/twitch-auth/oauth";
+import { createAuthSession } from "../../../features/twitch-auth/session";
 
 const config = { clientId: "client123", redirectUri: "http://localhost:5173/" };
 const body = {

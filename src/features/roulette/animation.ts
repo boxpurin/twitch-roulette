@@ -1,5 +1,5 @@
 import { getStopAngle } from "./spin";
-import type { RouletteItem } from "./items";
+import type { RouletteItem } from "../participants/items";
 
 interface FrameScheduler {
   request(callback: FrameRequestCallback): number;

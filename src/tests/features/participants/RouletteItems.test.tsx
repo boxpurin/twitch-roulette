@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import RouletteItems from "./RouletteItems";
+import RouletteItems from "../../../features/participants/RouletteItems";
 
 const items = [
   { id: "m", name: "手動", weight: 99, excluded: true },

@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from "react";
 import type { RouletteController } from "./controller";
-import type { RewardListState } from "../twitch-rewards/list";
+import type { RewardListState } from "../features/twitch-rewards/list";
 
 export default function ReceptionControls({
   controller,

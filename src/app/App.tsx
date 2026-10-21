@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
-import type { AuthConfig } from "./features/twitch-auth/oauth";
-import type { AuthSession } from "./features/twitch-auth/session";
-import Roulette from "./features/roulette/Roulette";
+import type { AuthConfig } from "../features/twitch-auth/oauth";
+import type { AuthSession } from "../features/twitch-auth/session";
+import Roulette from "./Roulette";
 import "./App.css";
 
 interface AppProps {

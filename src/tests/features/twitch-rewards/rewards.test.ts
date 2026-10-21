@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseRewards } from "./rewards";
+import { parseRewards } from "../../../features/twitch-rewards/rewards";
 
 const reward = { id: "r1", title: "ルーレット参加", cost: 500 };
 

@@ -1,6 +1,6 @@
 import { isRecord, isText } from "../../shared/validation";
 import { readMessage, readRedemption } from "./messages";
-import type { Redemption } from "../roulette/history";
+import type { Redemption } from "../participants/history";
 
 export interface EventSocket {
   onmessage: ((event: { data: unknown }) => void) | null;

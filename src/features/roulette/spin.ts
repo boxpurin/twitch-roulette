@@ -1,5 +1,5 @@
-import type { RouletteItem } from "./items";
-import { getEligibleItems } from "./items";
+import type { RouletteItem } from "../participants/items";
+import { getEligibleItems } from "../participants/items";
 import { isPositiveInteger } from "../../shared/validation";
 
 export function getSectors(items: readonly RouletteItem[]) {

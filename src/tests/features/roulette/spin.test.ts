@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getSectors, getStopAngle, selectWinner } from "./spin";
+import { getSectors, getStopAngle, selectWinner } from "../../../features/roulette/spin";
 
 const items = [
   { id: "a", name: "A賞" },

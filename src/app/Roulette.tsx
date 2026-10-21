@@ -5,13 +5,13 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import RouletteItems from "./RouletteItems";
+import RouletteItems from "../features/participants/RouletteItems";
 import { createRouletteController } from "./controller";
 import ReceptionControls from "./ReceptionControls";
-import { createRewardList } from "../twitch-rewards/list";
-import type { AuthSession } from "../twitch-auth/session";
-import { createWheel, WHEEL_SIZE } from "./wheel";
-import { getEligibleItems } from "./items";
+import { createRewardList } from "../features/twitch-rewards/list";
+import type { AuthSession } from "../features/twitch-auth/session";
+import { createWheel, WHEEL_SIZE } from "../features/roulette/wheel";
+import { getEligibleItems } from "../features/participants/items";
 
 export default function Roulette({
   userId,
