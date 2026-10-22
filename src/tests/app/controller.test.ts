@@ -257,3 +257,144 @@ describe("exclusion coordination", () => {
     expect(f.controller.beginSpin(() => 0)).toBeUndefined();
   });
 });
+
+// Winner history is separate from the currently displayed winner and item names.
+describe("winner history", () => {
+  it("records successful spins once with start time and the selected name, preserving cumulative counts past 20 entries and reloads", () => {
+    const f = fixture();
+    let time = 1000;
+    f.options.now = () => time;
+    f.controller.edit({ type: "add", id: "a", name: "当選時の名前" });
+    f.controller.finishSpin({ id: "a", name: "記録しない" });
+    expect(f.controller.getSnapshot().winnerHistory.entries).toEqual([]);
+    const first = f.controller.beginSpin(() => 0)!;
+    time = 2000;
+    f.controller.finishSpin(first);
+    f.controller.finishSpin(first);
+    expect(f.controller.getSnapshot().winnerHistory.entries).toEqual([
+      { itemId: "a", name: "当選時の名前", spunAt: 1000, winNumber: 1 },
+    ]);
+    f.controller.edit({ type: "rename", id: "a", name: "変更後" });
+    expect(f.controller.getSnapshot().winnerHistory.entries[0].name).toBe(
+      "当選時の名前",
+    );
+    for (let index = 0; index < 21; index++) {
+      time++;
+      const winner = f.controller.beginSpin(() => 0)!;
+      f.controller.finishSpin(winner);
+    }
+    const saved = f.controller.getSnapshot().winnerHistory;
+    expect(saved.entries).toHaveLength(20);
+    expect(saved.entries[0].winNumber).toBe(3);
+    expect(saved.entries.at(-1)?.winNumber).toBe(22);
+    const reloaded = createRouletteController(f.options);
+    expect(reloaded.getSnapshot().winnerHistory).toEqual(saved);
+    const winner = reloaded.beginSpin(() => 0)!;
+    reloaded.finishSpin(winner);
+    expect(reloaded.getSnapshot().winnerHistory.entries.at(-1)?.winNumber).toBe(
+      23,
+    );
+  });
+
+  it("counts by ID, retains counts through deletion, isolates accounts/rewards and clears on reset", () => {
+    const f = fixture();
+    const spin = () => {
+      const winner = f.controller.beginSpin(() => 0)!;
+      f.controller.finishSpin(winner);
+    };
+    f.controller.selectReward("a");
+    f.controller.edit({ type: "add", id: "manual", name: "同名" });
+    spin();
+    f.controller.edit({ type: "remove", id: "manual" });
+    f.controller.edit({
+      type: "add",
+      id: "ignored",
+      userId: "42",
+      name: "同名",
+    });
+    spin();
+    expect(
+      f.controller
+        .getSnapshot()
+        .winnerHistory.entries.map((entry) => entry.winNumber),
+    ).toEqual([1, 1]);
+    f.controller.edit({ type: "remove", id: "twitch:42" });
+    f.controller.edit({ type: "add", id: "again", userId: "42", name: "別名" });
+    spin();
+    expect(
+      f.controller.getSnapshot().winnerHistory.entries.at(-1)?.winNumber,
+    ).toBe(2);
+    f.controller.selectReward("b");
+    expect(f.controller.getSnapshot().winnerHistory.entries).toEqual([]);
+    f.controller.edit({ type: "add", id: "b", name: "別報酬" });
+    spin();
+    f.controller.selectReward("a");
+    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(3);
+    const other = createRouletteController({ ...f.options, userId: "other" });
+    expect(other.getSnapshot().winnerHistory.entries).toEqual([]);
+    f.controller.reset();
+    expect(f.controller.getSnapshot().winnerHistory).toEqual({
+      entries: [],
+      counts: [],
+    });
+    expect(
+      createRouletteController(f.options).getSnapshot().winnerHistory,
+    ).toEqual({ entries: [], counts: [] });
+    f.controller.edit({ type: "add", id: "again", userId: "42", name: "別名" });
+    spin();
+    expect(f.controller.getSnapshot().winnerHistory.entries[0].winNumber).toBe(
+      1,
+    );
+    f.controller.selectReward("b");
+    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(1);
+  });
+
+  it("does not record empty, aborted or mismatched spins", () => {
+    const f = fixture();
+    expect(f.controller.beginSpin()).toBeUndefined();
+    f.controller.edit({ type: "add", id: "a", name: "A" });
+    f.controller.beginSpin(() => 0);
+    f.controller.finishSpin(null);
+    expect(f.controller.getSnapshot().winnerHistory.entries).toEqual([]);
+    f.controller.beginSpin(() => 0);
+    f.controller.finishSpin({ id: "other", name: "Other" });
+    expect(f.controller.getSnapshot().winnerHistory.entries).toEqual([]);
+  });
+});
+
+describe("winner history during reception and storage errors", () => {
+  it("keeps the draw snapshot when Twitch changes the participant during a spin", () => {
+    const f = fixture();
+    f.controller.selectReward("r");
+    f.controller.start();
+    f.redeem("1");
+    const winner = f.controller.beginSpin(() => 0)!;
+    f.reception()?.onEvent({
+      userId: "42",
+      name: "新しい表示名",
+      redemptionId: "2",
+      messageId: "2",
+      redeemedAt: 150,
+    });
+    f.controller.finishSpin(winner);
+    expect(f.controller.getSnapshot().items[0].name).toBe("新しい表示名");
+    expect(f.controller.getSnapshot().winnerHistory.entries[0].name).toBe(
+      "視聴者",
+    );
+    expect(
+      createRouletteController(f.options).getSnapshot().winnerHistory.entries,
+    ).toHaveLength(1);
+  });
+  it("shows save failures while keeping the completed winner in memory", () => {
+    const f = fixture();
+    f.controller.edit({ type: "add", id: "a", name: "A" });
+    f.storage.setItem = () => {
+      throw new Error("quota");
+    };
+    const winner = f.controller.beginSpin(() => 0)!;
+    f.controller.finishSpin(winner);
+    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(1);
+    expect(f.controller.getSnapshot().storageError).toBeTruthy();
+    expect(f.controller.getSnapshot().spinning).toBe(false);
+  });
+});

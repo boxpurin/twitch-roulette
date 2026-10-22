@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { emptyHistory, historyReducer } from "../../../features/participants/history";
-import { loadHistory, saveHistory } from "../../../features/participants/storage";
+import {
+  emptyHistory,
+  historyReducer,
+} from "../../../features/participants/history";
+import {
+  loadHistory,
+  saveHistory,
+} from "../../../features/participants/storage";
 
 const event = {
   userId: "42",
@@ -197,5 +203,81 @@ describe("saved exclusion", () => {
         expect(loaded.blocked).toBe(true);
       }
     }
+  });
+});
+
+describe("persistent winner history", () => {
+  const stored = (winnerHistory: unknown) =>
+    JSON.stringify({ ...emptyHistory(), winnerHistory });
+  const load = (raw: string) =>
+    loadHistory({ getItem: () => raw, setItem: () => {} }, "a", "r");
+  it("loads pre-feature history with empty winners without dropping participants", () => {
+    const legacy = JSON.stringify({
+      version: 1,
+      items: [{ id: "a", name: "保存済み" }],
+      redemptionIds: [],
+      messageIds: [],
+      resetAt: 0,
+    });
+    const result = load(legacy);
+    expect(result.error).toBeNull();
+    expect(result.history.items[0].name).toBe("保存済み");
+    expect(result.history.winnerHistory).toEqual({ entries: [], counts: [] });
+  });
+  it("copies only known winner fields from storage", () => {
+    const result = load(
+      stored({
+        entries: [
+          {
+            itemId: "a",
+            name: "当選時",
+            spunAt: 100,
+            winNumber: 2,
+            extra: "discard",
+          },
+        ],
+        counts: [{ itemId: "a", count: 2, extra: "discard" }],
+        extra: "discard",
+      }),
+    );
+    expect(result.error).toBeNull();
+    expect(result.history.winnerHistory).toEqual({
+      entries: [{ itemId: "a", name: "当選時", spunAt: 100, winNumber: 2 }],
+      counts: [{ itemId: "a", count: 2 }],
+    });
+  });
+  it.each([
+    null,
+    { entries: [], counts: [{ itemId: "a", count: 0 }] },
+    {
+      entries: [],
+      counts: [
+        { itemId: "a", count: 1 },
+        { itemId: "a", count: 2 },
+      ],
+    },
+    {
+      entries: [{ itemId: "a", name: "A", spunAt: -1, winNumber: 1 }],
+      counts: [{ itemId: "a", count: 1 }],
+    },
+    {
+      entries: [{ itemId: "a", name: "A", spunAt: 8.64e15 + 1, winNumber: 1 }],
+      counts: [{ itemId: "a", count: 1 }],
+    },
+    {
+      entries: [{ itemId: "a", name: "A", spunAt: 100, winNumber: 2 }],
+      counts: [{ itemId: "a", count: 1 }],
+    },
+    {
+      entries: Array.from({ length: 21 }, () => ({
+        itemId: "a",
+        name: "A",
+        spunAt: 100,
+        winNumber: 1,
+      })),
+      counts: [{ itemId: "a", count: 1 }],
+    },
+  ])("protects malformed winner history from overwrites: %j", (value) => {
+    expect(load(stored(value)).blocked).toBe(true);
   });
 });

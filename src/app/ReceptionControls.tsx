@@ -144,7 +144,7 @@ export default function ReceptionControls({
         >
           <p>
             現在の配信者の「{selectedName}
-            」の項目・交換回数・倍率・当選結果を削除し、受付を停止します。元には戻せません。
+            」の項目・交換回数・倍率・当選結果・当選者履歴・累計当選回数を削除し、受付を停止します。元には戻せません。
           </p>
           <div className="item-actions">
             <button

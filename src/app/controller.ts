@@ -1,3 +1,5 @@
+import { recordWinner } from "../features/roulette/winnerHistory";
+import type { WinnerHistory } from "../features/roulette/winnerHistory";
 import { connectRedemptions } from "../features/twitch-eventsub/client";
 import type {
   ReceptionOptions,
@@ -22,6 +24,7 @@ interface Snapshot {
   items: RouletteItem[];
   spinning: boolean;
   winner: RouletteItem | null;
+  winnerHistory: WinnerHistory;
   accepting: boolean;
   pending: number;
   reception: ReceptionStatus;
@@ -60,6 +63,7 @@ export function createRouletteController(options: Options) {
     items: history.items,
     spinning: false,
     winner: null,
+    winnerHistory: history.winnerHistory,
     accepting: false,
     pending: 0,
     reception: stopped,
@@ -68,6 +72,7 @@ export function createRouletteController(options: Options) {
   const listeners = new Set<() => void>();
   let connection: ReturnType<typeof connectRedemptions> | undefined;
   let generation = 0;
+  let activeSpin: { winner: RouletteItem; spunAt: number } | undefined;
   function publish(next: Partial<Snapshot>) {
     state = { ...state, ...next };
     listeners.forEach((listener) => listener());
@@ -128,6 +133,7 @@ export function createRouletteController(options: Options) {
       }
       publish({
         rewardId: reward,
+        winnerHistory: history.winnerHistory,
         items: history.items,
         winner: null,
         pending: 0,
@@ -161,12 +167,38 @@ export function createRouletteController(options: Options) {
     beginSpin(random?: () => number) {
       if (state.spinning) return undefined;
       const selected = selectWinner(state.items, random);
-      if (selected) publish({ spinning: true, pending: 0 });
+      if (selected) {
+        activeSpin = {
+          winner: { ...selected },
+          spunAt: (options.now ?? Date.now)(),
+        };
+        publish({ spinning: true, pending: 0 });
+      }
       return selected;
     },
     finishSpin(winner: RouletteItem | null) {
       if (!state.spinning) return;
-      publish({ spinning: false, winner, items: history.items, pending: 0 });
+      const completed =
+        winner && activeSpin?.winner.id === winner.id ? activeSpin : undefined;
+      activeSpin = undefined;
+      if (completed) {
+        history = {
+          ...history,
+          winnerHistory: recordWinner(
+            history.winnerHistory,
+            completed.winner,
+            completed.spunAt,
+          ),
+        };
+      }
+      publish({
+        spinning: false,
+        winner: completed?.winner ?? null,
+        items: history.items,
+        pending: 0,
+        winnerHistory: history.winnerHistory,
+        storageError: completed ? persist() : state.storageError,
+      });
     },
     reset() {
       if (state.spinning) return false;
@@ -179,6 +211,7 @@ export function createRouletteController(options: Options) {
       publish({
         items: history.items,
         winner: null,
+        winnerHistory: history.winnerHistory,
         pending: 0,
         storageError: persist(),
       });

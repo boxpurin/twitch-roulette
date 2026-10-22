@@ -1,3 +1,4 @@
+import WinnerHistoryModal from "./WinnerHistoryModal";
 import {
   useEffect,
   useMemo,
@@ -115,6 +116,10 @@ export default function Roulette({
           Canvas 2D を初期化できません。対応ブラウザで再読み込みしてください。
         </p>
       ) : null}
+      <WinnerHistoryModal
+        key={`winner-history:${state.rewardId}`}
+        entries={state.winnerHistory.entries}
+      />
       <ReceptionControls
         controller={controller}
         rewards={rewards}
