@@ -1,5 +1,4 @@
 import type { RouletteItem } from "../participants/items";
-import { isPositiveInteger, isRecord, isText } from "../../shared/validation";
 
 export const WINNER_HISTORY_LIMIT = 20;
 
@@ -36,38 +35,4 @@ export function recordWinner(
         )
       : [...history.counts, { itemId: winner.id, count: winNumber }],
   };
-}
-
-export function isWinnerHistory(value: unknown): value is WinnerHistory {
-  if (
-    !isRecord(value) ||
-    !Array.isArray(value.entries) ||
-    value.entries.length > WINNER_HISTORY_LIMIT ||
-    !Array.isArray(value.counts) ||
-    !value.counts.every(
-      (entry) =>
-        isRecord(entry) &&
-        isText(entry.itemId) &&
-        isPositiveInteger(entry.count),
-    )
-  )
-    return false;
-  const counts = new Map(
-    value.counts.map((entry) => [entry.itemId, entry.count]),
-  );
-  return (
-    counts.size === value.counts.length &&
-    value.entries.every(
-      (entry) =>
-        isRecord(entry) &&
-        isText(entry.itemId) &&
-        isText(entry.name) &&
-        typeof entry.spunAt === "number" &&
-        Number.isFinite(entry.spunAt) &&
-        entry.spunAt >= 0 &&
-        entry.spunAt <= 8.64e15 &&
-        isPositiveInteger(entry.winNumber) &&
-        (counts.get(entry.itemId) ?? 0) >= entry.winNumber,
-    )
-  );
 }

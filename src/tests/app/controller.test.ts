@@ -260,7 +260,7 @@ describe("exclusion coordination", () => {
 
 // Winner history is separate from the currently displayed winner and item names.
 describe("winner history", () => {
-  it("records successful spins once with start time and the selected name, preserving cumulative counts past 20 entries and reloads", () => {
+  it("records successful spins once with start time and the selected name, preserving cumulative counts past 20 entries but starting fresh after reload", () => {
     const f = fixture();
     let time = 1000;
     f.options.now = () => time;
@@ -288,15 +288,18 @@ describe("winner history", () => {
     expect(saved.entries[0].winNumber).toBe(3);
     expect(saved.entries.at(-1)?.winNumber).toBe(22);
     const reloaded = createRouletteController(f.options);
-    expect(reloaded.getSnapshot().winnerHistory).toEqual(saved);
+    expect(reloaded.getSnapshot().winnerHistory).toEqual({
+      entries: [],
+      counts: [],
+    });
     const winner = reloaded.beginSpin(() => 0)!;
     reloaded.finishSpin(winner);
     expect(reloaded.getSnapshot().winnerHistory.entries.at(-1)?.winNumber).toBe(
-      23,
+      1,
     );
   });
 
-  it("counts by ID, retains counts through deletion, isolates accounts/rewards and clears on reset", () => {
+  it("counts by ID across rewards and item resets, while keeping controllers isolated", () => {
     const f = fixture();
     const spin = () => {
       const winner = f.controller.beginSpin(() => 0)!;
@@ -325,28 +328,29 @@ describe("winner history", () => {
       f.controller.getSnapshot().winnerHistory.entries.at(-1)?.winNumber,
     ).toBe(2);
     f.controller.selectReward("b");
-    expect(f.controller.getSnapshot().winnerHistory.entries).toEqual([]);
-    f.controller.edit({ type: "add", id: "b", name: "別報酬" });
+    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(3);
+    f.controller.edit({ type: "add", id: "b", userId: "42", name: "別報酬" });
     spin();
     f.controller.selectReward("a");
-    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(3);
+    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(4);
+    expect(
+      f.controller.getSnapshot().winnerHistory.entries.at(-1)?.winNumber,
+    ).toBe(3);
     const other = createRouletteController({ ...f.options, userId: "other" });
     expect(other.getSnapshot().winnerHistory.entries).toEqual([]);
+    const beforeReset = f.controller.getSnapshot().winnerHistory;
     f.controller.reset();
-    expect(f.controller.getSnapshot().winnerHistory).toEqual({
-      entries: [],
-      counts: [],
-    });
+    expect(f.controller.getSnapshot().winnerHistory).toBe(beforeReset);
     expect(
       createRouletteController(f.options).getSnapshot().winnerHistory,
     ).toEqual({ entries: [], counts: [] });
     f.controller.edit({ type: "add", id: "again", userId: "42", name: "別名" });
     spin();
-    expect(f.controller.getSnapshot().winnerHistory.entries[0].winNumber).toBe(
-      1,
-    );
+    expect(
+      f.controller.getSnapshot().winnerHistory.entries.at(-1)?.winNumber,
+    ).toBe(4);
     f.controller.selectReward("b");
-    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(1);
+    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(5);
   });
 
   it("does not record empty, aborted or mismatched spins", () => {
@@ -383,18 +387,47 @@ describe("winner history during reception and storage errors", () => {
     );
     expect(
       createRouletteController(f.options).getSnapshot().winnerHistory.entries,
-    ).toHaveLength(1);
+    ).toHaveLength(0);
   });
-  it("shows save failures while keeping the completed winner in memory", () => {
+  it("does not write winner history to storage when completing a spin", () => {
     const f = fixture();
     f.controller.edit({ type: "add", id: "a", name: "A" });
+    const persisted = [...f.values.entries()];
     f.storage.setItem = () => {
-      throw new Error("quota");
+      throw new Error("winner history must not be saved");
     };
     const winner = f.controller.beginSpin(() => 0)!;
     f.controller.finishSpin(winner);
     expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(1);
-    expect(f.controller.getSnapshot().storageError).toBeTruthy();
+    expect(f.controller.getSnapshot().storageError).toBeNull();
+    expect([...f.values.entries()]).toEqual(persisted);
+    expect([...f.values.values()].join("")).not.toContain("winnerHistory");
     expect(f.controller.getSnapshot().spinning).toBe(false);
+  });
+});
+
+describe("winner history navigation reset", () => {
+  it("clears counts, ignores late completion and restarts at the first win without affecting saved participants", () => {
+    const f = fixture();
+    f.controller.edit({ type: "add", id: "a", userId: "42", name: "視聴者" });
+    const first = f.controller.beginSpin(() => 0)!;
+    f.controller.finishSpin(first);
+    const inFlight = f.controller.beginSpin(() => 0)!;
+    const stored = [...f.values.entries()];
+    f.controller.clearWinnerHistory();
+    f.controller.finishSpin(inFlight);
+    expect(f.controller.getSnapshot().winnerHistory).toEqual({
+      entries: [],
+      counts: [],
+    });
+    expect([...f.values.entries()]).toEqual(stored);
+    expect(f.controller.getSnapshot().items).toHaveLength(1);
+    const next = f.controller.beginSpin(() => 0)!;
+    f.controller.finishSpin(next);
+    expect(f.controller.getSnapshot().winnerHistory.entries[0].winNumber).toBe(
+      1,
+    );
+    f.controller.stop();
+    expect(f.controller.getSnapshot().winnerHistory.entries).toHaveLength(1);
   });
 });

@@ -1,4 +1,3 @@
-import { emptyWinnerHistory, isWinnerHistory } from "../roulette/winnerHistory";
 import { emptyHistory } from "./history";
 import type { History } from "./history";
 import type { RouletteItem } from "./items";
@@ -30,8 +29,6 @@ function isHistory(value: unknown): value is History {
   if (
     !isRecord(value) ||
     value.version !== 1 ||
-    (value.winnerHistory !== undefined &&
-      !isWinnerHistory(value.winnerHistory)) ||
     !Array.isArray(value.items) ||
     !value.items.every(isItem) ||
     !Array.isArray(value.redemptionIds) ||
@@ -74,23 +71,6 @@ export function loadHistory(
     // Copy only known fields: never re-save unexpected properties from storage.
     const history: History = {
       version: 1,
-      winnerHistory:
-        value.winnerHistory === undefined
-          ? emptyWinnerHistory()
-          : {
-              entries: value.winnerHistory.entries.map(
-                ({ itemId, name, spunAt, winNumber }) => ({
-                  itemId,
-                  name,
-                  spunAt,
-                  winNumber,
-                }),
-              ),
-              counts: value.winnerHistory.counts.map(({ itemId, count }) => ({
-                itemId,
-                count,
-              })),
-            },
       resetAt: value.resetAt,
       redemptionIds: value.redemptionIds,
       messageIds: value.messageIds,

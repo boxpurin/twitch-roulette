@@ -48,7 +48,7 @@ export default function WinnerHistoryModal({
           </button>
         </div>
         <p className="caption">
-          直近20件を表示します。当選回数はリセット以降の累計です。日時はこのブラウザの現地時刻です。
+          直近20件を表示します。当選回数はこの画面を開いてからの累計です。報酬の切り替えや項目リセットでは保持し、更新・画面移動でクリアします。日時はこのブラウザの現地時刻です。
         </p>
         <label className="winner-history-order">
           表示順

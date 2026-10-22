@@ -1,5 +1,3 @@
-import { emptyWinnerHistory } from "../roulette/winnerHistory";
-import type { WinnerHistory } from "../roulette/winnerHistory";
 import { itemsReducer } from "./items";
 import type { ItemsAction, RouletteItem } from "./items";
 import { isPositiveInteger, isText } from "../../shared/validation";
@@ -13,7 +11,6 @@ export interface Redemption {
 }
 export interface History {
   version: 1;
-  winnerHistory: WinnerHistory;
   items: RouletteItem[];
   redemptionIds: string[];
   messageIds: string[];
@@ -26,7 +23,6 @@ export type HistoryAction =
 export function emptyHistory(): History {
   return {
     version: 1,
-    winnerHistory: emptyWinnerHistory(),
     items: [],
     redemptionIds: [],
     messageIds: [],

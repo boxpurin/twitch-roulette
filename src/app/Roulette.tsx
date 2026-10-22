@@ -45,7 +45,16 @@ export default function Roulette({
   }, [rewardList]);
   const { items, spinning, winner } = state;
   const eligibleItems = useMemo(() => getEligibleItems(items), [items]);
-  useEffect(() => () => controller.stop(), [controller]);
+  useEffect(() => {
+    const clearHistory = () => controller.clearWinnerHistory();
+    window.addEventListener("pagehide", clearHistory);
+    window.addEventListener("popstate", clearHistory);
+    return () => {
+      window.removeEventListener("pagehide", clearHistory);
+      window.removeEventListener("popstate", clearHistory);
+      controller.stop();
+    };
+  }, [controller]);
   const [error, setError] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wheelRef = useRef<ReturnType<typeof createWheel>>(undefined);
@@ -116,10 +125,7 @@ export default function Roulette({
           Canvas 2D を初期化できません。対応ブラウザで再読み込みしてください。
         </p>
       ) : null}
-      <WinnerHistoryModal
-        key={`winner-history:${state.rewardId}`}
-        entries={state.winnerHistory.entries}
-      />
+      <WinnerHistoryModal entries={state.winnerHistory.entries} />
       <ReceptionControls
         controller={controller}
         rewards={rewards}

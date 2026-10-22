@@ -128,7 +128,7 @@ export default function ReceptionControls({
         受付停止中・切断中の交換は自動で遡って反映されません。
       </p>
       <p className="caption">
-        履歴は配信者・報酬ごとに、このブラウザの localStorage
+        項目・交換の履歴は配信者・報酬ごとに、このブラウザの localStorage
         に保存します。再読み込み・ログアウト後も残ります。サイトデータの削除で失われます。複数タブでは同時に操作せず、一画面で利用してください。
       </p>
       {state.storageError ? (
@@ -144,7 +144,7 @@ export default function ReceptionControls({
         >
           <p>
             現在の配信者の「{selectedName}
-            」の項目・交換回数・倍率・当選結果・当選者履歴・累計当選回数を削除し、受付を停止します。元には戻せません。
+            」の項目・交換回数・倍率・当選結果を削除し、受付を停止します。当選者履歴と累計当選回数は残ります。元には戻せません。
           </p>
           <div className="item-actions">
             <button

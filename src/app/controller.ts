@@ -1,4 +1,7 @@
-import { recordWinner } from "../features/roulette/winnerHistory";
+import {
+  emptyWinnerHistory,
+  recordWinner,
+} from "../features/roulette/winnerHistory";
 import type { WinnerHistory } from "../features/roulette/winnerHistory";
 import { connectRedemptions } from "../features/twitch-eventsub/client";
 import type {
@@ -63,7 +66,7 @@ export function createRouletteController(options: Options) {
     items: history.items,
     spinning: false,
     winner: null,
-    winnerHistory: history.winnerHistory,
+    winnerHistory: emptyWinnerHistory(),
     accepting: false,
     pending: 0,
     reception: stopped,
@@ -133,7 +136,6 @@ export function createRouletteController(options: Options) {
       }
       publish({
         rewardId: reward,
-        winnerHistory: history.winnerHistory,
         items: history.items,
         winner: null,
         pending: 0,
@@ -181,24 +183,24 @@ export function createRouletteController(options: Options) {
       const completed =
         winner && activeSpin?.winner.id === winner.id ? activeSpin : undefined;
       activeSpin = undefined;
-      if (completed) {
-        history = {
-          ...history,
-          winnerHistory: recordWinner(
-            history.winnerHistory,
-            completed.winner,
-            completed.spunAt,
-          ),
-        };
-      }
       publish({
         spinning: false,
         winner: completed?.winner ?? null,
         items: history.items,
         pending: 0,
-        winnerHistory: history.winnerHistory,
-        storageError: completed ? persist() : state.storageError,
+        winnerHistory: completed
+          ? recordWinner(
+              state.winnerHistory,
+              completed.winner,
+              completed.spunAt,
+            )
+          : state.winnerHistory,
       });
+    },
+    clearWinnerHistory() {
+      // Navigation must not allow a late animation callback to restore a cleared entry.
+      activeSpin = undefined;
+      publish({ winnerHistory: emptyWinnerHistory() });
     },
     reset() {
       if (state.spinning) return false;
@@ -211,7 +213,6 @@ export function createRouletteController(options: Options) {
       publish({
         items: history.items,
         winner: null,
-        winnerHistory: history.winnerHistory,
         pending: 0,
         storageError: persist(),
       });
