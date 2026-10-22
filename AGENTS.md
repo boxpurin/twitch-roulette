@@ -68,6 +68,22 @@ src/
 
 必要になるまでは過剰に階層や抽象化を増やさない。
 
+## UI とスタイル
+- [Tailwind CSS v4](https://tailwindcss.com/docs/installation/using-vite) 
+  - `tailwind.config.js` と `postcss.config.js` は使用せず`@tailwindcss/vite` で読み込む。
+  - `src/app/index.css` の `@theme inline` に共通トークンを定義し、既存の配色と OS のライト・ダーク設定への追従を維持。
+
+- [shadcn/ui](https://ui.shadcn.com/docs/installation/vite) 
+  - コンポーネントは `src/shared/components/ui/` に配置。
+  - ボタン等の基本的なデザインをまとめられる要素は shadcn/ui を使いまとめる。
+- 配色・コントロールの基本スタイルはコンポーネント側、各画面の配置は Tailwind ユーティリティ側で管理します。
+- `@/` は `src/` を指し、`src/shared/utils.ts` の `cn()` でクラスを結合。
+
+- コンポーネントを追加する場合は `components.json` の公式レジストリ設定と配置先を使用。
+```bash
+pnpm dlx shadcn@latest add @shadcn/button
+```
+
 ## Twitch 連携・認証
 ### 基本方針
 - ブラウザ公開クライアントとして Authorization Code Flow + PKCE を使用し、Client Secret を配布しない。
