@@ -49,6 +49,65 @@ function fixture() {
 }
 
 describe("roulette coordination", () => {
+  it("persists manually linked users and combines later manual additions and redemptions", () => {
+    const f = fixture();
+    f.controller.selectReward("reward");
+    f.controller.edit({
+      type: "add",
+      id: "unused",
+      name: "手動名",
+      userId: "42",
+    });
+    const reloaded = createRouletteController(f.options);
+    expect(reloaded.getSnapshot().storageError).toBeNull();
+    expect(reloaded.getSnapshot().items).toEqual([
+      {
+        id: "twitch:42",
+        name: "手動名",
+        userId: "42",
+        weight: 1,
+        redemptions: 0,
+      },
+    ]);
+    f.controller.edit({
+      type: "add",
+      id: "another",
+      name: "別名",
+      userId: "42",
+    });
+    expect(f.controller.getSnapshot().items).toEqual([
+      {
+        id: "twitch:42",
+        name: "手動名",
+        userId: "42",
+        weight: 2,
+        redemptions: 0,
+      },
+    ]);
+    f.controller.start();
+    f.redeem("1");
+    f.redeem("1");
+    expect(f.controller.getSnapshot().items).toEqual([
+      {
+        id: "twitch:42",
+        name: "視聴者",
+        userId: "42",
+        weight: 3,
+        redemptions: 1,
+      },
+    ]);
+    f.controller.edit({ type: "exclude", id: "twitch:42", excluded: true });
+    f.controller.edit({ type: "add", id: "again", name: "別名", userId: "42" });
+    expect(f.controller.getSnapshot().items[0]).toMatchObject({
+      weight: 4,
+      redemptions: 1,
+      excluded: true,
+    });
+    expect(createRouletteController(f.options).getSnapshot().items).toEqual(
+      f.controller.getSnapshot().items,
+    );
+    f.controller.stop();
+  });
   it("receives and persists repeat weights, restores the selected reward after reload", () => {
     const f = fixture();
     f.controller.selectReward("reward");

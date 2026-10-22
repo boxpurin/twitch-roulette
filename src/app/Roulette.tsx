@@ -126,6 +126,7 @@ export default function Roulette({
         key={state.rewardId}
         items={items}
         dispatch={controller.edit}
+        lookupUser={session.lookupUser}
         disabled={spinning}
       />
     </section>

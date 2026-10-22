@@ -20,7 +20,9 @@ function isItem(value: unknown): value is RouletteItem {
       ? value.redemptions === undefined
       : isText(value.userId) &&
         value.id === `twitch:${value.userId}` &&
-        isPositiveInteger(value.redemptions))
+        typeof value.redemptions === "number" &&
+        Number.isSafeInteger(value.redemptions) &&
+        value.redemptions >= 0)
   );
 }
 function isHistory(value: unknown): value is History {

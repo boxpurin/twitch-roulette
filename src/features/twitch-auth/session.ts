@@ -14,6 +14,13 @@ export type AuthState =
   | { status: "authenticated"; user: AuthUser }
   | { status: "error"; message: string };
 
+export interface TwitchUser {
+  id: string;
+  login: string;
+  displayName: string;
+  profileImageUrl: string;
+}
+
 interface SessionOptions {
   config?: AuthConfig;
   configurationError?: string;
@@ -48,6 +55,7 @@ export function createAuthSession(options: SessionOptions) {
   let validationTimer: ReturnType<typeof setTimeout> | undefined;
   const listeners = new Set<() => void>();
   const rewardRequests = new Set<AbortController>();
+  const userRequests = new Set<AbortController>();
 
   function publish(next: AuthState) {
     state = next;
@@ -58,6 +66,8 @@ export function createAuthSession(options: SessionOptions) {
     generation++;
     rewardRequests.forEach((controller) => controller.abort());
     rewardRequests.clear();
+    userRequests.forEach((controller) => controller.abort());
+    userRequests.clear();
     request?.abort();
     request = undefined;
     clearTimeout(requestTimeout);
@@ -268,6 +278,102 @@ export function createAuthSession(options: SessionOptions) {
     }
   }
 
+  async function lookupUser(
+    loginName: string,
+    signal: AbortSignal,
+  ): Promise<TwitchUser> {
+    const login = loginName.trim().toLowerCase();
+    if (!login || !/^[a-z0-9_]+$/.test(login))
+      throw new Error(
+        "Twitch のログイン名を入力してください（表示名や URL ではありません）。",
+      );
+    if (
+      state.status !== "authenticated" ||
+      !token ||
+      !options.config ||
+      signal.aborted
+    )
+      throw new Error(EXPIRED);
+    if (Date.now() >= expiresAt) {
+      fail(EXPIRED);
+      throw new Error(EXPIRED);
+    }
+    const credential = token;
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    userRequests.add(controller);
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 15000);
+    try {
+      const url = new URL("https://api.twitch.tv/helix/users");
+      url.searchParams.set("login", login);
+      const response = await (options.transport ?? fetch)(url.href, {
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${credential}`,
+          "Client-Id": options.config.clientId,
+        },
+      });
+      if (controller.signal.aborted || token !== credential)
+        throw new Error("ユーザーの確認を中止しました。");
+      if (response.status === 401) {
+        fail(EXPIRED);
+        throw new Error(EXPIRED);
+      }
+      if (!response.ok)
+        throw new Error(
+          `ユーザーを確認できません（HTTP ${response.status}）。しばらくしてから再試行してください。`,
+        );
+      const body: unknown = await response.json();
+      if (controller.signal.aborted || token !== credential)
+        throw new Error("ユーザーの確認を中止しました。");
+      if (isRecord(body) && Array.isArray(body.data) && body.data.length === 0)
+        throw new Error(
+          "ユーザーが見つかりません。Twitch のログイン名を確認してください。",
+        );
+      const user =
+        isRecord(body) && Array.isArray(body.data) && body.data.length === 1
+          ? body.data[0]
+          : undefined;
+      if (
+        !isRecord(user) ||
+        !isText(user.id) ||
+        user.login !== login ||
+        !isText(user.display_name) ||
+        typeof user.profile_image_url !== "string"
+      )
+        throw new Error(
+          "Twitch のユーザー情報の応答が不正です。もう一度確認してください。",
+        );
+      return {
+        id: user.id,
+        login,
+        displayName: user.display_name,
+        profileImageUrl: user.profile_image_url,
+      };
+    } catch (error) {
+      if (timedOut)
+        throw new Error(
+          "ユーザーの確認がタイムアウトしました。もう一度確認してください。",
+        );
+      if (controller.signal.aborted && token === credential)
+        throw new Error("ユーザーの確認を中止しました。");
+      if (error instanceof TypeError || error instanceof SyntaxError)
+        throw new Error(
+          "ユーザーを確認できません。接続を確認して再試行してください。",
+        );
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+      userRequests.delete(controller);
+    }
+  }
+
   async function subscribeRedemptions(
     sessionId: string,
     rewardId: string,
@@ -338,6 +444,7 @@ export function createAuthSession(options: SessionOptions) {
     refresh,
     subscribeRedemptions,
     listRewards,
+    lookupUser,
     dispose() {
       cancel();
       publish({ status: "signedOut" });

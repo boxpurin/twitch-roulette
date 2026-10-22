@@ -9,6 +9,23 @@ const items = [
 ];
 
 describe("exclusion controls", () => {
+  it("offers optional account lookup and identifies linked participants", () => {
+    const html = renderToStaticMarkup(
+      <RouletteItems
+        items={items}
+        dispatch={() => {}}
+        lookupUser={async () => ({
+          id: "42",
+          login: "viewer",
+          displayName: "視聴者",
+          profileImageUrl: "",
+        })}
+      />,
+    );
+    expect(html).toContain("Twitch ログイン名（任意）");
+    expect(html).toContain("ユーザーを確認");
+    expect(html).toContain("Twitch ID: 42");
+  });
   it("keeps excluded rows and assigns probabilities by ID rather than row index", () => {
     const html = renderToStaticMarkup(
       <RouletteItems items={items} dispatch={() => {}} />,

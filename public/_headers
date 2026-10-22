@@ -1,2 +1,2 @@
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src https://id.twitch.tv https://api.twitch.tv wss://eventsub.wss.twitch.tv; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://static-cdn.jtvnw.net; font-src 'self'; connect-src https://id.twitch.tv https://api.twitch.tv wss://eventsub.wss.twitch.tv; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'

@@ -310,3 +310,127 @@ describe("authenticated reward listing", () => {
     expect(session.getSnapshot().status).toBe("signedOut");
   });
 });
+
+describe("authenticated user lookup", () => {
+  const viewer = {
+    id: "123",
+    login: "viewer",
+    display_name: "視聴者",
+    profile_image_url: "https://static-cdn.jtvnw.net/viewer.png",
+  };
+  it("resolves a login name with existing memory-only credentials", async () => {
+    const { session, transport, data } = setup();
+    await session.start();
+    transport.mockResolvedValue(Response.json({ data: [viewer] }));
+    const user = await session.lookupUser(
+      "  Viewer  ",
+      new AbortController().signal,
+    );
+    expect(user).toEqual({
+      id: "123",
+      login: "viewer",
+      displayName: "視聴者",
+      profileImageUrl: viewer.profile_image_url,
+    });
+    const [url, init] = transport.mock.calls[1]!;
+    expect(url).toBe("https://api.twitch.tv/helix/users?login=viewer");
+    expect(init?.headers).toMatchObject({
+      Authorization: "Bearer test-token",
+      "Client-Id": "client123",
+    });
+    expect(data.size).toBe(0);
+    expect(JSON.stringify(session.getSnapshot())).not.toContain("test-token");
+    session.dispose();
+  });
+  it.each([
+    { data: [] },
+    { data: [{ ...viewer, id: "" }] },
+    { data: [{ ...viewer, login: "other" }] },
+    { data: null },
+  ])("rejects absent, invalid or mismatched users: %j", async (response) => {
+    const { session, transport } = setup();
+    await session.start();
+    transport.mockResolvedValue(Response.json(response));
+    await expect(
+      session.lookupUser("viewer", new AbortController().signal),
+    ).rejects.toThrow();
+    expect(session.getSnapshot().status).toBe("authenticated");
+    session.dispose();
+  });
+  it.each([401, 429, 500])(
+    "handles HTTP %s without exposing response bodies",
+    async (status) => {
+      const { session, transport } = setup();
+      await session.start();
+      transport.mockResolvedValue(
+        Response.json({ message: "private-response" }, { status }),
+      );
+      await expect(
+        session.lookupUser("viewer", new AbortController().signal),
+      ).rejects.not.toThrow("private-response");
+      expect(session.getSnapshot().status).toBe(
+        status === 401 ? "error" : "authenticated",
+      );
+      session.dispose();
+    },
+  );
+  it.each(["abort", "logout"])(
+    "ignores a late result after %s",
+    async (action) => {
+      const { session, transport } = setup();
+      await session.start();
+      let finish: ((response: Response) => void) | undefined;
+      let pendingSignal: AbortSignal | null | undefined;
+      transport.mockImplementation((_url, init) => {
+        pendingSignal = init?.signal;
+        return new Promise<Response>((resolve) => {
+          finish = resolve;
+        });
+      });
+      const controller = new AbortController();
+      const pending = session.lookupUser("viewer", controller.signal);
+      if (action === "abort") controller.abort();
+      else session.logout();
+      expect(pendingSignal?.aborted).toBe(true);
+      finish?.(Response.json({ data: [viewer] }));
+      await expect(pending).rejects.toThrow();
+      session.dispose();
+    },
+  );
+  it("times out stalled searches without exposing transport errors", async () => {
+    const { session, transport } = setup();
+    await session.start();
+    transport.mockImplementation(
+      (_url, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(new Error("private-response")),
+            { once: true },
+          );
+        }),
+    );
+    const pending = expect(
+      session.lookupUser("viewer", new AbortController().signal),
+    ).rejects.toThrow("タイムアウト");
+    await vi.advanceTimersByTimeAsync(15000);
+    await pending;
+    expect(session.getSnapshot().status).toBe("authenticated");
+    session.dispose();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it("rejects blank logins and expired sessions before fetching", async () => {
+    const { session, transport } = setup();
+    await session.start();
+    await expect(
+      session.lookupUser(" ", new AbortController().signal),
+    ).rejects.toThrow();
+    vi.setSystemTime(new Date("2026-10-17T03:00:00Z"));
+    await expect(
+      session.lookupUser("viewer", new AbortController().signal),
+    ).rejects.toThrow();
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(session.getSnapshot().status).toBe("error");
+    session.dispose();
+  });
+});

@@ -1,4 +1,4 @@
-import { isPositiveInteger } from "../../shared/validation";
+import { isPositiveInteger, isText } from "../../shared/validation";
 
 export interface RouletteItem {
   id: string;
@@ -16,7 +16,7 @@ export function getEligibleItems(
 }
 
 export type ItemsAction =
-  | { type: "add"; id: string; name: string }
+  | { type: "add"; id: string; name: string; userId?: string }
   | { type: "rename"; id: string; name: string }
   | { type: "remove"; id: string }
   | { type: "exclude"; id: string; excluded: boolean }
@@ -46,6 +46,21 @@ export function itemsReducer(
   if (!name) return items;
 
   if (action.type === "add") {
+    if (action.userId !== undefined) {
+      if (!isText(action.userId)) return items;
+      const userId = action.userId;
+      const previous = items.find((item) => item.userId === userId);
+      if (previous) {
+        const weight = (previous.weight ?? 1) + 1;
+        if (!isPositiveInteger(weight)) return items;
+        return items.map((item) =>
+          item === previous ? { ...item, weight } : item,
+        );
+      }
+      const id = `twitch:${userId}`;
+      if (items.some((item) => item.id === id)) return items;
+      return [...items, { id, name, userId, weight: 1, redemptions: 0 }];
+    }
     if (items.some((item) => item.id === action.id)) return items;
     return [...items, { id: action.id, name }];
   }

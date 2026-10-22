@@ -168,6 +168,19 @@ footer p + p {
   gap: 12px;
   margin: 20px 0;
 }
+.manual-item-form {
+  margin-bottom: 20px;
+}
+.twitch-user-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+.twitch-user-preview img {
+  border-radius: 50%;
+}
 .item-field {
   display: flex;
   flex: 1;

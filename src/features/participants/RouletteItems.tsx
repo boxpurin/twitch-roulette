@@ -3,11 +3,14 @@ import { isPositiveInteger } from "../../shared/validation";
 import { getSectors } from "../roulette/spin";
 import type { Dispatch } from "react";
 import type { ItemsAction, RouletteItem } from "./items";
+import type { AuthSession } from "../twitch-auth/session";
+import ManualItemForm from "./ManualItemForm";
 
 interface ItemsProps {
   items: readonly RouletteItem[];
   dispatch: Dispatch<ItemsAction>;
   disabled?: boolean;
+  lookupUser?: AuthSession["lookupUser"];
 }
 
 function ItemRow({
@@ -103,6 +106,7 @@ function ItemRow({
                 ? ` · 交換 ${item.redemptions} 回`
                 : " · 手動項目"}
               {item.excluded ? " · 抽選対象外" : null}
+              {item.userId ? ` · Twitch ID: ${item.userId}` : null}
             </p>
           </div>
           <div className="item-actions">
@@ -139,8 +143,8 @@ export default function RouletteItems({
   items,
   dispatch,
   disabled = false,
+  lookupUser,
 }: ItemsProps) {
-  const [name, setName] = useState("");
   const sectors = getSectors(items);
   const probabilities = new Map(
     sectors.map(({ item, probability }) => [item.id, probability]),
@@ -155,28 +159,12 @@ export default function RouletteItems({
         </span>
       </div>
       <fieldset disabled={disabled}>
-        <form
-          className="item-add"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!name.trim()) return;
-            dispatch({ type: "add", id: crypto.randomUUID(), name });
-            setName("");
-          }}
-        >
-          <label className="item-field">
-            <span>項目名</span>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="追加する項目の名前"
-              required
-            />
-          </label>
-          <button type="submit" disabled={!name.trim()}>
-            項目を追加
-          </button>
-        </form>
+        <ManualItemForm
+          items={items}
+          dispatch={dispatch}
+          lookupUser={lookupUser}
+          disabled={disabled}
+        />
         {items.length === 0 ? (
           <p className="items-empty">
             まだ項目がありません。上のフォームから追加してください。
@@ -199,7 +187,9 @@ export default function RouletteItems({
         <p className="caption">回転中は項目を変更できません。</p>
       ) : null}
       <p className="caption">
-        初回交換は 1 倍、再交換ごとに現在の倍率へ 1
+        Twitch と紐づけた手動追加は 1 倍、登録済みなら現在の倍率へ 1
+        を加えます。手動追加は交換回数に含めません。未登録のユーザーの初回交換は
+        1 倍、登録済みなら交換ごとに現在の倍率へ 1
         を加えます。手動変更後も同じルールです。全員 1
         倍なら抽選対象内の当選確率は均等です。除外した項目はチェックを外すと抽選対象に戻ります。
       </p>

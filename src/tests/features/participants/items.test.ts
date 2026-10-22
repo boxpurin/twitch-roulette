@@ -2,6 +2,44 @@ import { describe, expect, it } from "vitest";
 import { itemsReducer } from "../../../features/participants/items";
 
 describe("roulette items", () => {
+  it("does not merge an unlinked manual entry by display name", () => {
+    const items = [{ id: "manual", name: "同名" }];
+    const next = itemsReducer(items, {
+      type: "add",
+      id: "ignored",
+      name: "同名",
+      userId: "42",
+    });
+    expect(next).toHaveLength(2);
+    expect(next[1]).toMatchObject({
+      id: "twitch:42",
+      userId: "42",
+      weight: 1,
+      redemptions: 0,
+    });
+  });
+  it("rejects empty user IDs and overflowing repeat weights", () => {
+    const items = [
+      {
+        id: "twitch:42",
+        name: "視聴者",
+        userId: "42",
+        weight: Number.MAX_SAFE_INTEGER,
+        redemptions: 1,
+      },
+    ];
+    expect(
+      itemsReducer(items, { type: "add", id: "new", name: "名前", userId: "" }),
+    ).toBe(items);
+    expect(
+      itemsReducer(items, {
+        type: "add",
+        id: "new",
+        name: "名前",
+        userId: "42",
+      }),
+    ).toBe(items);
+  });
   it("adds trimmed names without changing existing items", () => {
     const original = [{ id: "1", name: "最初" }];
     expect(
