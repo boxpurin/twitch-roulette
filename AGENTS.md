@@ -10,9 +10,9 @@ Twitch EventSub WebSocket で、指定したカスタムチャンネルポイン
 
 ## 技術スタック
 - 言語: TypeScript（strict モード）
-- UI: React / Tailwind CSS
+- UI・スタイリング: React / Tailwind CSS / shadcn/ui
 - ビルド・開発サーバー: Vite
-- デプロイ先：Cloudflare Pages
+- デプロイ先：Cloudflare Workers
 - ルーレット描画: Canvas 2D API
 - 回転アニメーション: requestAnimationFrame（必要に応じて CSS Animation）
 - Twitch 通信: Fetch API / WebSocket API
@@ -51,22 +51,33 @@ pnpm fmt
 - MVP では独自サーバー、DB、常駐プロセスを追加しない。
 - 認証情報を URL クエリ、ログ、公開設定ファイルへ出力しない。
 
-### ディレクトリ構成の目安
+## ディレクトリ構成
 
 ```text
 src/
-  app/                 # アプリ初期化・画面構成
+  app/                 # 起動・画面構成・機能間の調整・画面全体のスタイル
+  assets/              # 画像などの静的アセット
   features/
-    twitch-auth/       # OAuth PKCE・認証状態
-    twitch-eventsub/   # WebSocket・購読・再接続
-    participants/      # 参加受付・重複排除
-    roulette/          # 抽選ロジック・Canvas 描画
-    effects/           # 演出インターフェース・将来の PixiJS 実装
+    twitch-auth/       # OAuth・認証セッション
+    twitch-eventsub/   # WebSocket・購読・再接続・通知の変換
+    twitch-rewards/    # 報酬一覧の読み取り・取得状態
+    participants/      # 参加者の編集 UI・履歴・重複排除・保存
+    roulette/          # 抽選ロジック・回転アニメーション・Canvas 描画
+    effects/          # 演出関係。 必要になった時点で追加して作成。
   shared/              # 汎用ユーティリティ・型
-  tests/               # テストコード
+  tests/               # app/・features/ の構成に対応したテスト
 ```
+- 必要になるまでは過剰に階層や抽象化を増やさない。
 
-必要になるまでは過剰に階層や抽象化を増やさない。
+## 主要ファイル
+- `src/app/main.tsx` : エントリポイント
+- `src/app/controller.ts` : 参加受付・参加者履歴・抽選を調整
+- `src/app/Roulette.tsx` , `src/app/ReceptionControls.tsx` : 画面を構築する。
+- `src/roulette` : 抽選ロジック。React・Canvas・Twitch API に依存しません。
+- `.env.example` : 環境変数テンプレート
+- `.env.local` : ローカル環境で使用する環境変数の値（**リモートリポジトリへコミットしない**）
+- `README.md` : 人間向けのプロジェクトの概要、主要技術、開発環境の準備、実行・検証方法、詳細資料へのリンク。
+
 
 ## UI とスタイル
 - [Tailwind CSS v4](https://tailwindcss.com/docs/installation/using-vite) 
@@ -84,45 +95,19 @@ src/
 pnpm dlx shadcn@latest add @shadcn/button
 ```
 
-## Twitch 連携・認証
-### 基本方針
-- ブラウザ公開クライアントとして Authorization Code Flow + PKCE を使用し、Client Secret を配布しない。
-- 必要最小限の OAuth スコープを要求する。
-- 報酬交換イベント購読の要件は実装時点の公式ドキュメントで確認する。
-
-- Twitch API の仕様は変更され得るため、**実装前に公式資料で検証**する。
-
-### 通信方式
-EventSub WebSocket から session_welcome を受け取り、得られた session ID を使って Helix API に購読を作成する。
-対象イベントは channel.channel_points_custom_reward_redemption.add。対象報酬 ID を照合する。
-EventSub の通知には重複の可能性があるため、メッセージ ID や交換 ID に基づく冪等処理を実装する。
-keepalive、再接続指示、切断、認証期限切れ、購読失敗を明示的に扱う。
-再接続時に過去の通知がすべて再配信されると仮定しない。取りこぼし対策が必要なら Helix API で取得可能な範囲と権限を確認して設計する。
-ブラウザだけでは認証情報の秘匿や複数端末間の状態共有を保証できない。制約を UI とドキュメントに明記する。
-
-### その他連携事項
-OBS ブラウザソースと通常ブラウザ間で状態が自動共有されるとは仮定しない。MVP は単一ブラウザ画面を OBS でキャプチャする方式を基本とする。
-
-### Twitc API 公式資料
-https://dev.twitch.tv/docs/authentication/
-https://dev.twitch.tv/docs/eventsub/handling-websocket-events/
-https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/
-
 ## 描画とパフォーマンス
+- Canvas 2D API でルーレットを描画する。
+- 扇形・参加者名など静的な内容は、参加者一覧が変わったときにだけ再描画し、必要に応じてオフスクリーン Canvas にキャッシュする。
+- 回転中は可能な限りキャッシュ済み円盤を変形・合成して描画する。
+- 待機中は requestAnimationFrame の継続ループを止める。
+- Canvas の内部解像度は表示サイズと必要な画質から決定し、無制限に devicePixelRatio を適用しない。
+- 抽選結果は描画とは独立して決定し、アニメーションは決定済み結果に停止させる。
+- 30 FPS は初期検証候補であり固定要件ではない。
+- 不必要な依存ライブラリ、常時動作するタイマー、毎フレームの React 再レンダリングを避ける。
+- 最適化の効果は推測で断定せず、対象ブラウザと OBS の利用条件で計測する。
 
-MVP は Canvas 2D API のみでルーレットを描画する。
-扇形・参加者名など静的な内容は、参加者一覧が変わったときにだけ再描画し、必要に応じてオフスクリーン Canvas にキャッシュする。
-回転中は可能な限りキャッシュ済み円盤を変形・合成して描画する。
-待機中は requestAnimationFrame の継続ループを止める。
-Canvas の内部解像度は表示サイズと必要な画質から決定し、無制限に devicePixelRatio を適用しない。
-抽選結果は描画とは独立して決定し、アニメーションは決定済み結果に停止させる。
-30 FPS は初期検証候補であり固定要件ではない。視認性と実測負荷から調整する。
-不必要な依存ライブラリ、常時動作するタイマー、毎フレームの React 再レンダリングを避ける。
-最適化の効果は推測で断定せず、対象ブラウザと OBS の利用条件で計測する。
-
-## 将来のエフェクト拡張
-
-エフェクトはルーレット本体から独立した任意機能とする。
+### 将来のエフェクト拡張
+- エフェクトはルーレット本体から独立した任意機能。
 
 ``` ts
 export interface RouletteEffects {
@@ -131,18 +116,48 @@ export interface RouletteEffects {
   dispose(): void;
 }
 ```
+- MVP は何も描画しない NoopRouletteEffects でよい。
+- PixiJS はエフェクトが必要になった段階で導入し、可能なら動的 import で初期バンドルから分離する。
+- PixiJS の透明 Canvas をルーレット Canvas の上に重ねる。操作を妨げないよう必要に応じて pointer-events: none を指定する。
+- 演出が終了したら描画ループを停止し、不要になったリソースは適切に破棄する。
+- エフェクトを無効化しても抽選・参加受付・結果表示が正常に動くようにする。
+- PixiJS を追加する前に、既存の Canvas 2D 実装を全面置換しない。
 
-MVP は何も描画しない NoopRouletteEffects でよい。
+## Twitch 連携・認証
+### 基本方針
+- ブラウザ公開クライアントとして Authorization Code Flow + PKCE を使用し、Client Secret を配布しない。
+- 必要最小限の OAuth スコープを要求する。
+- 報酬交換イベント購読の要件は実装時点の公式ドキュメントで確認する。
+- Twitch API の仕様は変更され得るため、**実装前に公式資料で検証**する。
 
-PixiJS はエフェクトが必要になった段階で導入し、可能なら動的 import で初期バンドルから分離する。
+### 要求権限
+- `channel:read:redemptions` : 報酬交換読み取りに必要
 
-PixiJS の透明 Canvas をルーレット Canvas の上に重ねる。操作を妨げないよう必要に応じて pointer-events: none を指定する。
+### 認証方式と制約
+- Twitch 公式がブラウザアプリ向けに説明している **Implicit Flow** を使用。
+- ログインごとに暗号学的乱数の `state` を作成し、sessionStorage に10分間だけ有効な要求情報として保存します。戻り値との一致を検査し、一度使った要求は削除します。
+- Twitch からフラグメントに返されたトークンは、起動時に URL と履歴から除去する。
+- `/oauth2/validate` で Client ID・ユーザー ID・権限・有効期限を確認した後に認証済みとする。
+- アクセストークンはメモリだけに保持し、localStorage・sessionStorage・設定ファイル・ログには保存しない。
+- 一時間ごとに再検証し、期限切れ・検証失敗・ログアウト・ページ離脱時にセッションを終了します。
+  - タブを再表示した際にも期限と再検証の必要性を確認すること。
+  - 通信のタイムアウトは15秒とする。
+- 再読み込みすると再ログインが必要。
+  - 自動更新・リフレッシュトークン保存は行わない。
+- ログアウトはこの画面のセッション終了時とする。
 
-演出が終了したら描画ループを停止し、不要になったリソースは適切に破棄する。
+### 通信方式
+- EventSub WebSocket から session_welcome を受け取り、得られた session ID を使って Helix API に購読を作成する。
+  - 対象イベントは channel.channel_points_custom_reward_redemption.add。対象報酬 ID を照合する。
+- EventSub の通知には重複の可能性があるため、メッセージ ID や交換 ID に基づく冪等処理を実装する。
+  - keepalive、再接続指示、切断、認証期限切れ、購読失敗を明示的に扱う。
+  - 再接続時に過去の通知がすべて再配信されると仮定しない。取りこぼし対策が必要なら Helix API で取得可能な範囲と権限を確認して設計する。
+- ブラウザだけでは認証情報の秘匿や複数端末間の状態共有を保証できない。制約を UI とドキュメントに明記する。
 
-エフェクトを無効化しても抽選・参加受付・結果表示が正常に動くようにする。
-
-PixiJS を追加する前に、既存の Canvas 2D 実装を全面置換しない。
+### Twitc API 公式資料
+https://dev.twitch.tv/docs/authentication/
+https://dev.twitch.tv/docs/eventsub/handling-websocket-events/
+https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/
 
 ## テスト方針
 ### 優先してテストする内容
@@ -169,6 +184,9 @@ PixiJS を追加する前に、既存の Canvas 2D 実装を全面置換しな�
 - 独自バックエンドなしで静的ホスティングできる。
 - テスト・型チェック・ビルドが通る。
 - MVP に PixiJS、豪華な演出、複数ブラウザ間の同期、専用 OBS オーバーレイは含めない。
+
+## デプロイ方針
+- Cloudflare Worker での 静的ホスティング
 
 ## コミットルール
 - 1つの論理的な変更単位ごとにコミットする（**テストが通る状態で**）
