@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { Input } from "@/shared/components/ui/input";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Button } from "@/shared/components/ui/button";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Dispatch } from "react";
 import type { AuthSession, TwitchUser } from "../twitch-auth/session";
 import type { ItemsAction, RouletteItem } from "./items";
@@ -15,6 +18,7 @@ export default function ManualItemForm({
   lookupUser?: AuthSession["lookupUser"];
   disabled: boolean;
 }) {
+  const fieldId = useId();
   const [name, setName] = useState("");
   const [login, setLogin] = useState("");
   const [user, setUser] = useState<TwitchUser | null>(null);
@@ -75,7 +79,7 @@ export default function ManualItemForm({
 
   return (
     <form
-      className="manual-item-form"
+      className="manual-item-form mb-5"
       onSubmit={(event) => {
         event.preventDefault();
         if (
@@ -103,17 +107,18 @@ export default function ManualItemForm({
         setError(null);
       }}
     >
-      <div className="item-add">
-        <label className="item-field">
-          <span>項目名</span>
-          <input
+      <FieldGroup className="@container-normal my-5 flex-row items-end gap-3 max-[480px]:flex-col max-[480px]:items-stretch">
+        <Field className="min-w-0 flex-1 gap-2">
+          <FieldLabel htmlFor={`manual-${fieldId}-1`}>項目名</FieldLabel>
+          <Input
+            id={`manual-${fieldId}-1`}
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="追加する項目の名前"
             required
           />
-        </label>
-        <button
+        </Field>
+        <Button
           type="submit"
           disabled={
             disabled ||
@@ -124,14 +129,17 @@ export default function ManualItemForm({
           }
         >
           {existing ? "倍率を +1" : "項目を追加"}
-        </button>
-      </div>
+        </Button>
+      </FieldGroup>
       {lookupUser ? (
         <>
-          <div className="item-add">
-            <label className="item-field">
-              <span>Twitch ログイン名（任意）</span>
-              <input
+          <FieldGroup className="@container-normal my-5 flex-row items-end gap-3 max-[480px]:flex-col max-[480px]:items-stretch">
+            <Field className="min-w-0 flex-1 gap-2">
+              <FieldLabel htmlFor={`manual-${fieldId}-2`}>
+                Twitch ログイン名（任意）
+              </FieldLabel>
+              <Input
+                id={`manual-${fieldId}-2`}
                 value={login}
                 onChange={(event) => {
                   request.current?.abort();
@@ -148,28 +156,32 @@ export default function ManualItemForm({
                 spellCheck={false}
                 aria-describedby="twitch-login-help"
               />
-            </label>
-            <button
+            </Field>
+            <Button
               type="button"
-              className="secondary"
+              variant="outline"
               onClick={() => {
                 void confirmUser();
               }}
               disabled={disabled || checking || !login.trim()}
             >
               {checking ? "確認中…" : "ユーザーを確認"}
-            </button>
-          </div>
-          <p id="twitch-login-help" className="caption">
+            </Button>
+          </FieldGroup>
+          <p id="twitch-login-help" className="text-sm">
             プロフィール URL の twitch.tv/
             に続くログイン名を入力し、ユーザーを確認してください。空欄なら
             Twitch と紐づけずに追加します。
           </p>
           {user ? (
-            <div className="twitch-user-preview" role="status">
+            <div
+              className="mt-3 flex items-center gap-3 [overflow-wrap:anywhere]"
+              role="status"
+            >
               {user.profileImageUrl.startsWith("https://") ? (
                 <img
                   src={user.profileImageUrl}
+                  className="rounded-full"
                   alt=""
                   width="40"
                   height="40"
@@ -178,9 +190,9 @@ export default function ManualItemForm({
               ) : null}
               <div>
                 <strong>{user.displayName}</strong>（{user.login}）
-                <p className="caption">Twitch ID: {user.id}</p>
+                <p className="text-sm">Twitch ID: {user.id}</p>
                 {existing ? (
-                  <p className="caption">
+                  <p className="text-sm">
                     登録済みの「{existing.name}」の倍率を +1
                     します。名前と除外設定は維持します。
                   </p>
@@ -191,17 +203,17 @@ export default function ManualItemForm({
         </>
       ) : null}
       {error ? (
-        <p role="alert" className="auth-error">
+        <p role="alert" className="text-destructive">
           {error}
         </p>
       ) : null}
       {weightLimit ? (
-        <p role="alert" className="auth-error">
+        <p role="alert" className="text-destructive">
           倍率が上限に達しています。既存項目の倍率を変更してから追加してください。
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="caption">
+        <p role="status" className="text-sm">
           {notice}
         </p>
       ) : null}

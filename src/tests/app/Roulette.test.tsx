@@ -53,20 +53,18 @@ it.each(["popstate", "pagehide"])(
       await click("項目を追加");
       for (let index = 0; index < 3; index++) {
         await click("ルーレットを回す");
-        expect(host.querySelectorAll(".winner-history")).toHaveLength(1);
-        expect(host.querySelectorAll(".winner-history tbody tr")).toHaveLength(
+        expect(host.querySelectorAll("dialog")).toHaveLength(1);
+        expect(host.querySelectorAll("dialog tbody tr")).toHaveLength(
           index + 1,
         );
       }
-      const order = host.querySelector<HTMLSelectElement>(
-        ".winner-history-order select",
-      )!;
+      const order = host.querySelector<HTMLSelectElement>("dialog select")!;
       await act(async () => {
         order.value = "asc";
         order.dispatchEvent(new Event("change", { bubbles: true }));
       });
       const reward = host.querySelector<HTMLSelectElement>(
-        ".reward-fields select",
+        'select[id^="reward-"]',
       )!;
       for (const value of ["r", ""]) {
         await act(async () => {
@@ -74,21 +72,21 @@ it.each(["popstate", "pagehide"])(
           reward.dispatchEvent(new Event("change", { bubbles: true }));
         });
         await click("報酬を選択");
-        expect(host.querySelectorAll(".winner-history tbody tr")).toHaveLength(
-          3,
-        );
-        expect(host.querySelector(".winner-history-order select")).toBe(order);
+        expect(host.querySelectorAll("dialog tbody tr")).toHaveLength(3);
+        expect(host.querySelector("dialog select")).toBe(order);
         expect(order.value).toBe("asc");
       }
       await click("履歴をリセット");
       await click("削除してリセット");
-      expect(host.querySelectorAll(".winner-history")).toHaveLength(1);
-      expect(host.querySelectorAll(".winner-history tbody tr")).toHaveLength(3);
-      expect(host.querySelectorAll(".item-table tbody tr")).toHaveLength(0);
+      expect(host.querySelectorAll("dialog")).toHaveLength(1);
+      expect(host.querySelectorAll("dialog tbody tr")).toHaveLength(3);
+      expect(
+        host.querySelectorAll('[aria-labelledby="items-heading"] tbody tr'),
+      ).toHaveLength(0);
       await act(async () => {
         window.dispatchEvent(new Event(eventType));
       });
-      expect(host.querySelectorAll(".winner-history tbody tr")).toHaveLength(0);
+      expect(host.querySelectorAll("dialog tbody tr")).toHaveLength(0);
       expect(host.textContent).toContain("当選者履歴はまだありません");
     } finally {
       await act(async () => {

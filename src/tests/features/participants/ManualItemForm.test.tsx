@@ -38,10 +38,11 @@ function render() {
   );
 }
 function field(label: string) {
-  const input = Array.from(host.querySelectorAll("label"))
-    .find((element) => element.textContent?.includes(label))
-    ?.querySelector("input");
-  if (!input) throw new Error(`Missing field: ${label}`);
+  const input = Array.from(host.querySelectorAll("label")).find((element) =>
+    element.textContent?.includes(label),
+  )?.control;
+  if (!(input instanceof HTMLInputElement))
+    throw new Error(`Missing field: ${label}`);
   return input;
 }
 async function input(label: string, value: string) {

@@ -1,4 +1,11 @@
-import { useState, useSyncExternalStore } from "react";
+import { Separator } from "@/shared/components/ui/separator";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/shared/components/ui/native-select";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Button } from "@/shared/components/ui/button";
+import { useId, useState, useSyncExternalStore } from "react";
 import type { RouletteController } from "./controller";
 import type { RewardListState } from "../features/twitch-rewards/list";
 
@@ -16,6 +23,7 @@ export default function ReceptionControls({
     controller.getSnapshot,
     controller.getSnapshot,
   );
+  const fieldId = useId();
   const [draft, setDraft] = useState(state.rewardId);
   const [confirmReset, setConfirmReset] = useState(false);
   const selected = rewards.rewards.find(
@@ -30,10 +38,11 @@ export default function ReceptionControls({
     selected?.title ??
     (state.rewardId ? missingLabel : "報酬未選択（手動項目）");
   return (
-    <section className="reception-controls" aria-labelledby="reception-heading">
+    <section className="mt-6 text-left" aria-labelledby="reception-heading">
+      <Separator className="mb-5" />
       <h2 id="reception-heading">チャンネルポイント連携</h2>
       <form
-        className="item-add"
+        className="my-5 flex items-end gap-3 max-[480px]:flex-col max-[480px]:items-stretch"
         onSubmit={(event) => {
           event.preventDefault();
           if (rewards.status !== "ready" || (draft && !drafted)) return;
@@ -42,41 +51,47 @@ export default function ReceptionControls({
       >
         <fieldset
           disabled={state.spinning || state.accepting}
-          className="reward-fields"
+          className="m-0 w-full min-w-0 border-0 p-0"
         >
-          <label className="item-field">
-            <span>対象報酬</span>
-            <select
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              disabled={rewards.status !== "ready"}
+          <FieldGroup className="@container-normal flex-row items-end gap-3 max-[480px]:flex-col max-[480px]:items-stretch">
+            <Field className="min-w-0 flex-1 gap-2">
+              <FieldLabel htmlFor={`reward-${fieldId}`}>対象報酬</FieldLabel>
+              <NativeSelect
+                id={`reward-${fieldId}`}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                disabled={rewards.status !== "ready"}
+              >
+                <NativeSelectOption value="">
+                  報酬未選択（手動項目）
+                </NativeSelectOption>
+                {draft && !drafted ? (
+                  <NativeSelectOption value={draft} disabled>
+                    {missingLabel}
+                  </NativeSelectOption>
+                ) : null}
+                {rewards.rewards.map((reward) => (
+                  <NativeSelectOption key={reward.id} value={reward.id}>
+                    {reward.title}（{reward.cost} ポイント）
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Button
+              variant="outline"
+              type="submit"
+              disabled={rewards.status !== "ready" || (!!draft && !drafted)}
             >
-              <option value="">報酬未選択（手動項目）</option>
-              {draft && !drafted ? (
-                <option value={draft} disabled>
-                  {missingLabel}
-                </option>
-              ) : null}
-              {rewards.rewards.map((reward) => (
-                <option key={reward.id} value={reward.id}>
-                  {reward.title}（{reward.cost} ポイント）
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            disabled={rewards.status !== "ready" || (!!draft && !drafted)}
-          >
-            報酬を選択
-          </button>
+              報酬を選択
+            </Button>
+          </FieldGroup>
         </fieldset>
       </form>
       {rewards.status === "loading" ? (
         <p role="status">報酬一覧を取得しています…</p>
       ) : null}
       {rewards.status === "error" ? (
-        <p role="alert" className="auth-error">
+        <p role="alert" className="text-destructive">
           {rewards.message}
         </p>
       ) : null}
@@ -86,24 +101,25 @@ export default function ReceptionControls({
         </p>
       ) : null}
       {rewards.status === "ready" && state.rewardId && !selected ? (
-        <p className="caption">
+        <p className="text-sm">
           以前の報酬は一覧に見つかりません。履歴を保持しています。別の報酬を選択してください。
         </p>
       ) : null}
-      <button
+      <Button
+        variant="outline"
         type="button"
-        className="secondary"
         disabled={
           rewards.status === "loading" || state.spinning || state.accepting
         }
         onClick={reload}
       >
         報酬一覧を再取得
-      </button>
-      <p className="caption">
+      </Button>
+      <p className="text-sm">
         現在の保存先: {selectedName}。報酬を変更するには受付を停止してください。
       </p>
-      <button
+      <Button
+        variant="outline"
         type="button"
         onClick={() =>
           state.accepting ? controller.stop() : controller.start()
@@ -111,10 +127,12 @@ export default function ReceptionControls({
         disabled={!state.accepting && (rewards.status !== "ready" || !selected)}
       >
         {state.accepting ? "受付を停止" : "受付を開始"}
-      </button>
+      </Button>
       <p
         role="status"
-        className={state.reception.phase === "error" ? "auth-error" : undefined}
+        className={
+          state.reception.phase === "error" ? "text-destructive" : undefined
+        }
       >
         {state.reception.message}
       </p>
@@ -124,21 +142,21 @@ export default function ReceptionControls({
           件を保存しました。回転終了後に反映します。
         </p>
       ) : null}
-      <p className="caption">
+      <p className="text-sm">
         受付停止中・切断中の交換は自動で遡って反映されません。
       </p>
-      <p className="caption">
+      <p className="text-sm">
         項目・交換の履歴は配信者・報酬ごとに、このブラウザの localStorage
         に保存します。再読み込み・ログアウト後も残ります。サイトデータの削除で失われます。複数タブでは同時に操作せず、一画面で利用してください。
       </p>
       {state.storageError ? (
-        <p role="alert" className="auth-error">
+        <p role="alert" className="text-destructive">
           {state.storageError}
         </p>
       ) : null}
       {confirmReset ? (
         <div
-          className="reset-confirmation"
+          className="mt-4 rounded-md border p-4"
           role="group"
           aria-label="履歴リセットの確認"
         >
@@ -146,8 +164,9 @@ export default function ReceptionControls({
             現在の配信者の「{selectedName}
             」の項目・交換回数・倍率・当選結果を削除し、受付を停止します。当選者履歴と累計当選回数は残ります。元には戻せません。
           </p>
-          <div className="item-actions">
-            <button
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
               type="button"
               disabled={state.spinning}
               onClick={() => {
@@ -156,25 +175,25 @@ export default function ReceptionControls({
               }}
             >
               削除してリセット
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               type="button"
-              className="secondary"
               onClick={() => setConfirmReset(false)}
             >
               キャンセル
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <button
+        <Button
+          variant="outline"
           type="button"
-          className="secondary"
           disabled={state.spinning}
           onClick={() => setConfirmReset(true)}
         >
           履歴をリセット
-        </button>
+        </Button>
       )}
     </section>
   );

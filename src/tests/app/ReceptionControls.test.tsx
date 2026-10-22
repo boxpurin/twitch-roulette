@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import ReceptionControls from "../../app/ReceptionControls";
@@ -30,10 +31,16 @@ describe("reward dropdown", () => {
     );
     expect(html).toContain("<select");
     expect(html).toContain("ルーレット参加（500 ポイント）");
-    expect(html).toMatch(/<option value="r1" selected="">/);
+    const document = new DOMParser().parseFromString(html, "text/html");
+    expect(document.querySelector<HTMLSelectElement>("select")!.value).toBe(
+      "r1",
+    );
     expect(html).not.toContain("<input");
     expect(html).toContain("現在の保存先: ルーレット参加");
-    expect(html).toMatch(/<button type="button">受付を開始<\/button>/);
+    const start = Array.from(document.querySelectorAll("button")).find(
+      (button) => button.textContent === "受付を開始",
+    )!;
+    expect(start.disabled).toBe(false);
   });
   it("explains loading, failure and empty lists", () => {
     expect(render({ status: "loading", rewards: [] })).toContain(
@@ -52,9 +59,11 @@ describe("reward dropdown", () => {
   it("preserves a missing saved reward but prevents starting its subscription", () => {
     const html = render({ status: "ready", rewards: [] }, "deleted");
     expect(html).toContain("以前選択した報酬（現在の一覧にありません）");
-    expect(html).toMatch(
-      /<button type="button" disabled="">受付を開始<\/button>/,
-    );
+    const document = new DOMParser().parseFromString(html, "text/html");
+    const start = Array.from(document.querySelectorAll("button")).find(
+      (button) => button.textContent === "受付を開始",
+    )!;
+    expect(start.disabled).toBe(true);
     expect(html).toContain("履歴をリセット");
   });
 });

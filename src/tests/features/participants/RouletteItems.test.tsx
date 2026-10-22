@@ -71,7 +71,7 @@ describe("exclusion controls", () => {
       <RouletteItems items={items} dispatch={() => {}} disabled />,
     );
     expect(html).toMatch(
-      /<fieldset disabled="">[\s\S]*type="checkbox"[\s\S]*<\/fieldset>/,
+      /<fieldset[^>]*disabled="">[\s\S]*type="checkbox"[\s\S]*<\/fieldset>/,
     );
   });
 });

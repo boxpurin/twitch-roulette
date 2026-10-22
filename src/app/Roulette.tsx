@@ -1,3 +1,10 @@
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/shared/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
 import WinnerHistoryModal from "./WinnerHistoryModal";
 import {
   useEffect,
@@ -93,53 +100,66 @@ export default function Roulette({
           : `抽選対象 ${eligibleItems.length} 件 / 全 ${items.length} 件`;
 
   return (
-    <section className="roulette-card" aria-labelledby="roulette-heading">
-      <h2 id="roulette-heading">ルーレット</h2>
-      <canvas
-        ref={canvasRef}
-        className="roulette-canvas"
-        width={WHEEL_SIZE}
-        height={WHEEL_SIZE}
-        role="img"
-        aria-label={
-          items.length === 0
-            ? "参加者未登録のルーレット（待機中）"
-            : `抽選対象 ${eligibleItems.length} 件のルーレット（${spinning ? "回転中" : "待機中"}）。項目名は下の一覧で確認できます。`
-        }
-      >
-        ルーレットの表示には Canvas 2D 対応のブラウザが必要です。
-      </canvas>
-      <button
-        className="spin-button"
-        type="button"
-        onClick={spin}
-        disabled={eligibleItems.length === 0 || spinning || error}
-      >
-        {spinning ? "回転中…" : "ルーレットを回す"}
-      </button>
-      <p role="status" aria-atomic="true" className="roulette-status">
-        {status}
-      </p>
-      {error ? (
-        <p role="alert" className="auth-error">
-          Canvas 2D を初期化できません。対応ブラウザで再読み込みしてください。
-        </p>
-      ) : null}
-      <WinnerHistoryModal entries={state.winnerHistory.entries} />
-      <ReceptionControls
-        controller={controller}
-        rewards={rewards}
-        reload={() => {
-          void rewardList.reload();
-        }}
-      />
-      <RouletteItems
-        key={state.rewardId}
-        items={items}
-        dispatch={controller.edit}
-        lookupUser={session.lookupUser}
-        disabled={spinning}
-      />
-    </section>
+    <Card asChild className="mt-7 p-6 text-center max-[480px]:px-4">
+      <section aria-labelledby="roulette-heading">
+        <CardHeader className="mb-0">
+          <CardTitle id="roulette-heading" className="mb-2">
+            ルーレット
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <canvas
+            ref={canvasRef}
+            className="mx-auto my-4 block h-auto w-full max-w-[480px]"
+            width={WHEEL_SIZE}
+            height={WHEEL_SIZE}
+            role="img"
+            aria-label={
+              items.length === 0
+                ? "参加者未登録のルーレット（待機中）"
+                : `抽選対象 ${eligibleItems.length} 件のルーレット（${spinning ? "回転中" : "待機中"}）。項目名は下の一覧で確認できます。`
+            }
+          >
+            ルーレットの表示には Canvas 2D 対応のブラウザが必要です。
+          </canvas>
+          <Button
+            size="lg"
+            type="button"
+            onClick={spin}
+            disabled={eligibleItems.length === 0 || spinning || error}
+          >
+            {spinning ? "回転中…" : "ルーレットを回す"}
+          </Button>
+          <p
+            role="status"
+            aria-atomic="true"
+            className="mt-4 font-semibold whitespace-pre-wrap text-foreground"
+          >
+            {status}
+          </p>
+          {error ? (
+            <p role="alert" className="text-destructive">
+              Canvas 2D
+              を初期化できません。対応ブラウザで再読み込みしてください。
+            </p>
+          ) : null}
+          <WinnerHistoryModal entries={state.winnerHistory.entries} />
+          <ReceptionControls
+            controller={controller}
+            rewards={rewards}
+            reload={() => {
+              void rewardList.reload();
+            }}
+          />
+          <RouletteItems
+            key={state.rewardId}
+            items={items}
+            dispatch={controller.edit}
+            lookupUser={session.lookupUser}
+            disabled={spinning}
+          />
+        </CardContent>
+      </section>
+    </Card>
   );
 }

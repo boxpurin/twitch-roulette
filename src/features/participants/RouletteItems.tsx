@@ -1,4 +1,17 @@
-import { useState } from "react";
+import { Separator } from "@/shared/components/ui/separator";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/shared/components/ui/table";
+import { Empty } from "@/shared/components/ui/empty";
+import { Input } from "@/shared/components/ui/input";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Button } from "@/shared/components/ui/button";
+import { useId, useState } from "react";
 import { isPositiveInteger } from "../../shared/validation";
 import { getSectors } from "../roulette/spin";
 import type { Dispatch } from "react";
@@ -24,6 +37,7 @@ function ItemRow({
   probability: number;
   dispatch: Dispatch<ItemsAction>;
 }) {
+  const fieldId = useId();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.name);
   const [weight, setWeight] = useState(String(item.weight ?? 1));
@@ -36,9 +50,10 @@ function ItemRow({
 
   return (
     <>
-      <tr className="roulette-item">
-        <td className="item-exclusion">
+      <TableRow className="roulette-item">
+        <TableCell className="text-center">
           <input
+            className="size-[18px] accent-primary focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-3"
             type="checkbox"
             checked={item.excluded === true}
             aria-label={`項目 ${index + 1}（${item.name}）を抽選から除外`}
@@ -50,23 +65,27 @@ function ItemRow({
               })
             }
           />
-        </td>
-        <td className="item-name">
+        </TableCell>
+        <TableCell className="whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">
           {item.name}
-          <p className="caption">
+          <p className="text-sm">
             {item.redemptions !== undefined
               ? `交換 ${item.redemptions} 回`
               : "手動項目"}
             {item.excluded ? " · 抽選対象外" : null}
             {item.userId ? ` · Twitch ID: ${item.userId}` : null}
           </p>
-        </td>
-        <td className="item-value">{item.weight ?? 1} 倍</td>
-        <td className="item-value">{chance}</td>
-        <td>
-          <button
+        </TableCell>
+        <TableCell className="tabular-nums [overflow-wrap:anywhere]">
+          {item.weight ?? 1} 倍
+        </TableCell>
+        <TableCell className="tabular-nums [overflow-wrap:anywhere]">
+          {chance}
+        </TableCell>
+        <TableCell>
+          <Button
             type="button"
-            className="secondary"
+            variant="outline"
             aria-label={`項目 ${index + 1} を編集`}
             aria-expanded={editing}
             onClick={() => {
@@ -76,24 +95,24 @@ function ItemRow({
             }}
           >
             編集
-          </button>
-        </td>
-        <td>
-          <button
+          </Button>
+        </TableCell>
+        <TableCell>
+          <Button
             type="button"
-            className="secondary"
+            variant="outline"
             aria-label={`項目 ${index + 1} を削除`}
             onClick={() => dispatch({ type: "remove", id: item.id })}
           >
             削除
-          </button>
-        </td>
-      </tr>
+          </Button>
+        </TableCell>
+      </TableRow>
       {editing ? (
-        <tr className="item-edit-row">
-          <td colSpan={6}>
+        <TableRow className="item-edit-row">
+          <TableCell colSpan={6}>
             <form
-              className="item-edit"
+              className="item-edit flex flex-col gap-3"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!draft.trim() || !validWeight) return;
@@ -106,42 +125,53 @@ function ItemRow({
                 setEditing(false);
               }}
             >
-              <label className="item-field">
-                <span>項目 {index + 1} の名前</span>
-                <input
-                  autoFocus
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  required
-                />
-              </label>
-              <label className="item-field">
-                <span>項目 {index + 1} の倍率</span>
-                <input
-                  type="number"
-                  min="1"
-                  max={Number.MAX_SAFE_INTEGER}
-                  step="1"
-                  value={weight}
-                  onChange={(event) => setWeight(event.target.value)}
-                  required
-                />
-              </label>
-              <div className="item-actions">
-                <button type="submit" disabled={!draft.trim() || !validWeight}>
-                  保存
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => setEditing(false)}
-                >
-                  キャンセル
-                </button>
-              </div>
+              <FieldGroup className="gap-3">
+                <Field className="min-w-0 flex-1 gap-2">
+                  <FieldLabel htmlFor={`edit-${fieldId}-1`}>
+                    項目 {index + 1} の名前
+                  </FieldLabel>
+                  <Input
+                    id={`edit-${fieldId}-1`}
+                    autoFocus
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    required
+                  />
+                </Field>
+                <Field className="min-w-0 flex-1 gap-2">
+                  <FieldLabel htmlFor={`edit-${fieldId}-2`}>
+                    項目 {index + 1} の倍率
+                  </FieldLabel>
+                  <Input
+                    id={`edit-${fieldId}-2`}
+                    type="number"
+                    min="1"
+                    max={Number.MAX_SAFE_INTEGER}
+                    step="1"
+                    value={weight}
+                    onChange={(event) => setWeight(event.target.value)}
+                    required
+                  />
+                </Field>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="submit"
+                    disabled={!draft.trim() || !validWeight}
+                  >
+                    保存
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditing(false)}
+                  >
+                    キャンセル
+                  </Button>
+                </div>
+              </FieldGroup>
             </form>
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       ) : null}
     </>
   );
@@ -159,14 +189,17 @@ export default function RouletteItems({
   );
 
   return (
-    <section className="roulette-items" aria-labelledby="items-heading">
-      <div className="items-heading">
-        <h2 id="items-heading">ルーレットの項目</h2>
+    <section className="mt-6 text-left" aria-labelledby="items-heading">
+      <Separator className="mb-6" />
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="m-0" id="items-heading">
+          ルーレットの項目
+        </h2>
         <span>
           抽選対象 {sectors.length} 件 / 全 {items.length} 件
         </span>
       </div>
-      <fieldset disabled={disabled}>
+      <fieldset className="min-w-0" disabled={disabled}>
         <ManualItemForm
           items={items}
           dispatch={dispatch}
@@ -174,46 +207,57 @@ export default function RouletteItems({
           disabled={disabled}
         />
         {items.length === 0 ? (
-          <p className="items-empty">
+          <Empty>
             まだ項目がありません。上のフォームから追加してください。
-          </p>
+          </Empty>
         ) : (
-          <div
-            className="item-table-scroll"
-            role="region"
+          <Table
+            containerProps={{
+              role: "region",
+              "aria-labelledby": "items-heading",
+              tabIndex: 0,
+            }}
+            className="min-w-[640px]"
             aria-labelledby="items-heading"
-            tabIndex={0}
           >
-            <table className="item-table" aria-labelledby="items-heading">
-              <thead>
-                <tr>
-                  <th scope="col">抽選から除外</th>
-                  <th scope="col">名前</th>
-                  <th scope="col">倍率</th>
-                  <th scope="col">当選確率</th>
-                  <th scope="col">編集</th>
-                  <th scope="col">削除</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    index={index}
-                    dispatch={dispatch}
-                    probability={probabilities.get(item.id) ?? 0}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[112px]" scope="col">
+                  抽選から除外
+                </TableHead>
+                <TableHead scope="col">名前</TableHead>
+                <TableHead className="w-[96px]" scope="col">
+                  倍率
+                </TableHead>
+                <TableHead className="w-[96px]" scope="col">
+                  当選確率
+                </TableHead>
+                <TableHead className="w-[80px]" scope="col">
+                  編集
+                </TableHead>
+                <TableHead className="w-[80px]" scope="col">
+                  削除
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item, index) => (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  dispatch={dispatch}
+                  probability={probabilities.get(item.id) ?? 0}
+                />
+              ))}
+            </TableBody>
+          </Table>
         )}
       </fieldset>
       {disabled ? (
-        <p className="caption">回転中は項目を変更できません。</p>
+        <p className="text-sm">回転中は項目を変更できません。</p>
       ) : null}
-      <p className="caption">
+      <p className="text-sm">
         Twitch と紐づけた手動追加は 1 倍、登録済みなら現在の倍率へ 1
         を加えます。手動追加は交換回数に含めません。未登録のユーザーの初回交換は
         1 倍、登録済みなら交換ごとに現在の倍率へ 1

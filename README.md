@@ -161,3 +161,17 @@ pnpm build
 
 - [EventSub WebSocket の購読・再接続・切断](https://dev.twitch.tv/docs/eventsub/handling-websocket-events/)
 - [Helix 購読作成 API](https://dev.twitch.tv/docs/api/reference/#create-eventsub-subscription)
+
+## UI とスタイル
+
+[Tailwind CSS v4](https://tailwindcss.com/docs/installation/using-vite) を `@tailwindcss/vite` で読み込みます。`tailwind.config.js` と `postcss.config.js` は使用しません。`src/app/index.css` の `@theme inline` に共通トークンを定義し、既存の配色と OS のライト・ダーク設定への追従を維持しています。
+
+[shadcn/ui](https://ui.shadcn.com/docs/installation/vite) のコンポーネントは `src/shared/components/ui/` に配置します。ボタン、入力、ネイティブ選択欄、カード、フォーム、表、空表示、区切り線を共通化しています。配色・コントロールの基本スタイルはコンポーネント側、各画面の配置は Tailwind ユーティリティ側で管理します。`@/` は `src/` を指し、`src/shared/utils.ts` の `cn()` でクラスを結合します。
+
+コンポーネントを追加する場合は `components.json` の公式レジストリ設定と配置先を使います。
+
+```bash
+pnpm dlx shadcn@latest add @shadcn/button
+```
+
+当選履歴は既存のネイティブ `<dialog>`、除外操作はネイティブのチェックボックスを維持しています。抽選・Twitch 通信・Canvas 描画の実装とは分離しています。
