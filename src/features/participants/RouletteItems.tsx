@@ -35,107 +35,115 @@ function ItemRow({
       : `${Number(percentage.toFixed(2))}%`;
 
   return (
-    <li className="roulette-item">
-      <label className="item-exclusion">
-        <input
-          type="checkbox"
-          checked={item.excluded === true}
-          aria-label={`項目 ${index + 1}（${item.name}）を抽選から除外`}
-          onChange={(event) =>
-            dispatch({
-              type: "exclude",
-              id: item.id,
-              excluded: event.target.checked,
-            })
-          }
-        />
-        抽選から除外
-      </label>
+    <>
+      <tr className="roulette-item">
+        <td className="item-exclusion">
+          <input
+            type="checkbox"
+            checked={item.excluded === true}
+            aria-label={`項目 ${index + 1}（${item.name}）を抽選から除外`}
+            onChange={(event) =>
+              dispatch({
+                type: "exclude",
+                id: item.id,
+                excluded: event.target.checked,
+              })
+            }
+          />
+        </td>
+        <td className="item-name">
+          {item.name}
+          <p className="caption">
+            {item.redemptions !== undefined
+              ? `交換 ${item.redemptions} 回`
+              : "手動項目"}
+            {item.excluded ? " · 抽選対象外" : null}
+            {item.userId ? ` · Twitch ID: ${item.userId}` : null}
+          </p>
+        </td>
+        <td className="item-value">{item.weight ?? 1} 倍</td>
+        <td className="item-value">{chance}</td>
+        <td>
+          <button
+            type="button"
+            className="secondary"
+            aria-label={`項目 ${index + 1} を編集`}
+            aria-expanded={editing}
+            onClick={() => {
+              setDraft(item.name);
+              setWeight(String(item.weight ?? 1));
+              setEditing(true);
+            }}
+          >
+            編集
+          </button>
+        </td>
+        <td>
+          <button
+            type="button"
+            className="secondary"
+            aria-label={`項目 ${index + 1} を削除`}
+            onClick={() => dispatch({ type: "remove", id: item.id })}
+          >
+            削除
+          </button>
+        </td>
+      </tr>
       {editing ? (
-        <form
-          className="item-edit"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!draft.trim() || !validWeight) return;
-            dispatch({ type: "rename", id: item.id, name: draft });
-            dispatch({ type: "weight", id: item.id, weight: Number(weight) });
-            setEditing(false);
-          }}
-        >
-          <label className="item-field">
-            <span>項目 {index + 1} の名前</span>
-            <input
-              autoFocus
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              required
-            />
-          </label>
-          <label className="item-field">
-            <span>項目 {index + 1} の倍率</span>
-            <input
-              type="number"
-              min="1"
-              max={Number.MAX_SAFE_INTEGER}
-              step="1"
-              value={weight}
-              onChange={(event) => setWeight(event.target.value)}
-              required
-            />
-          </label>
-          <div className="item-actions">
-            <button type="submit" disabled={!draft.trim() || !validWeight}>
-              保存
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => setEditing(false)}
-            >
-              キャンセル
-            </button>
-          </div>
-        </form>
-      ) : (
-        <>
-          <div className="item-name">
-            {item.name}
-            <p className="caption">
-              倍率 {item.weight ?? 1} 倍 · 当選確率 {chance}
-              {item.redemptions !== undefined
-                ? ` · 交換 ${item.redemptions} 回`
-                : " · 手動項目"}
-              {item.excluded ? " · 抽選対象外" : null}
-              {item.userId ? ` · Twitch ID: ${item.userId}` : null}
-            </p>
-          </div>
-          <div className="item-actions">
-            <button
-              type="button"
-              className="secondary"
-              aria-label={`項目 ${index + 1} を編集`}
-              onClick={() => {
-                setDraft(item.name);
-                setWeight(String(item.weight ?? 1));
-                setEditing(true);
+        <tr className="item-edit-row">
+          <td colSpan={6}>
+            <form
+              className="item-edit"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!draft.trim() || !validWeight) return;
+                dispatch({ type: "rename", id: item.id, name: draft });
+                dispatch({
+                  type: "weight",
+                  id: item.id,
+                  weight: Number(weight),
+                });
+                setEditing(false);
               }}
             >
-              編集
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              aria-label={`項目 ${index + 1} を削除`}
-              onClick={() => {
-                dispatch({ type: "remove", id: item.id });
-              }}
-            >
-              削除
-            </button>
-          </div>
-        </>
-      )}
-    </li>
+              <label className="item-field">
+                <span>項目 {index + 1} の名前</span>
+                <input
+                  autoFocus
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="item-field">
+                <span>項目 {index + 1} の倍率</span>
+                <input
+                  type="number"
+                  min="1"
+                  max={Number.MAX_SAFE_INTEGER}
+                  step="1"
+                  value={weight}
+                  onChange={(event) => setWeight(event.target.value)}
+                  required
+                />
+              </label>
+              <div className="item-actions">
+                <button type="submit" disabled={!draft.trim() || !validWeight}>
+                  保存
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setEditing(false)}
+                >
+                  キャンセル
+                </button>
+              </div>
+            </form>
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }
 
@@ -170,17 +178,36 @@ export default function RouletteItems({
             まだ項目がありません。上のフォームから追加してください。
           </p>
         ) : (
-          <ol className="item-list">
-            {items.map((item, index) => (
-              <ItemRow
-                key={item.id}
-                item={item}
-                index={index}
-                dispatch={dispatch}
-                probability={probabilities.get(item.id) ?? 0}
-              />
-            ))}
-          </ol>
+          <div
+            className="item-table-scroll"
+            role="region"
+            aria-labelledby="items-heading"
+            tabIndex={0}
+          >
+            <table className="item-table" aria-labelledby="items-heading">
+              <thead>
+                <tr>
+                  <th scope="col">抽選から除外</th>
+                  <th scope="col">名前</th>
+                  <th scope="col">倍率</th>
+                  <th scope="col">当選確率</th>
+                  <th scope="col">編集</th>
+                  <th scope="col">削除</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, index) => (
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    dispatch={dispatch}
+                    probability={probabilities.get(item.id) ?? 0}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </fieldset>
       {disabled ? (

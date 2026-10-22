@@ -226,36 +226,56 @@ footer p + p {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
-.item-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.item-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
 }
-.roulette-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 0;
-  border-top: 1px solid var(--border);
+.item-table-scroll:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.item-table {
+  width: 100%;
+  min-width: 640px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.item-table th,
+.item-table td {
+  padding: 16px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.item-table th {
+  white-space: nowrap;
+}
+.item-table th:nth-child(1) {
+  width: 112px;
+}
+.item-table th:nth-child(3),
+.item-table th:nth-child(4) {
+  width: 96px;
+}
+.item-table th:nth-child(5),
+.item-table th:nth-child(6) {
+  width: 80px;
 }
 .item-name {
-  flex: 1;
-  min-width: 0;
   overflow-wrap: anywhere;
   color: var(--text-h);
   white-space: pre-wrap;
 }
 .item-exclusion {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  font-size: 14px;
+  text-align: center;
 }
 .item-exclusion input {
   width: 18px;
   height: 18px;
   accent-color: var(--accent);
+}
+.item-value {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 .item-actions {
   display: flex;
@@ -280,11 +300,6 @@ footer p + p {
   .item-add {
     flex-direction: column;
     align-items: stretch;
-  }
-  .roulette-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
   }
 }
 
